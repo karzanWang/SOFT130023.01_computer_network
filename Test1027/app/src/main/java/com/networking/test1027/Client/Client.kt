@@ -71,7 +71,9 @@ class Client(h: Handler?) {
                     .start()
             }else if(msg?.startsWith("PASV")==true){
                 println("PASV")
+                //等待PASVP返回，不做任何操作
             }
+            //待添加其他指令的客户端操作
         }
         init {
             message = msg

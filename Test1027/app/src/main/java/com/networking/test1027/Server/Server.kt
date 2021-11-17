@@ -10,25 +10,27 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 
-class Server (var port:Int,h: Handler?){
-    var commandSoc: Socket? = null
+class Server (port:Int, h: Handler?){
     var dataSoc: Socket? = null
     var serverSocket: ServerSocket? = null
     var dos: DataOutputStream? = null
     var dis: DataInputStream? = null
     var messageRecv: String? = null
     var handler: Handler? = null
+    var userTable:HashMap<String,String> = HashMap()
     init {
         handler = h
     }
     fun startService() {
         try {
             var socket: Socket? = null
+            userTable.put("test","test");
             println("waiting...")
             //等待连接，每建立一个连接，就新建一个线程
             while (true) {
                 socket = serverSocket!!.accept() //等待一个客户端的连接，在连接之前，此方法是阻塞的
                 println("connect to" + socket.inetAddress + ":" + socket.localPort)
+                //专门为一个Socket开一个ConnectThread
                 ConnectThread(socket).start()
             }
         } catch (e: IOException) {
@@ -41,6 +43,9 @@ class Server (var port:Int,h: Handler?){
     //向客户端发送信息
     internal inner class ConnectThread(socket: Socket?) : Thread() {
         var socket: Socket? = null
+        var logged: Boolean = true
+        //这里登录应该默认false，现在放true以便于调试
+        var username: String? = null
         override fun run() {
             try {
                 val dis = DataInputStream(socket!!.getInputStream())
@@ -55,18 +60,38 @@ class Server (var port:Int,h: Handler?){
                     //服务器的响应机制应该在这里写
                     if(msgRecv.equals("NOOP")){
                         dos.writeUTF("220 Service ready \n")
+                    }else if(msgRecv.startsWith("USER")){
+                        username = msgRecv.substring(5)
+                        dos.writeUTF("331 User name ok,need password")
+                    }else if(msgRecv.startsWith("PASS")){
+                        val pass = msgRecv.substring(5)
+                        if(userTable[username]?.equals(pass)==true){
+                            dos.writeUTF("230 User logged in")
+                            logged = true
+                        }else{
+                            dos.writeUTF("530 Not logged in")
+                        }
                     }else if(msgRecv.startsWith("PORT")){
-                        val port = Integer.parseInt(msgRecv.substring(5))
-                        val clientAddress = socket!!.remoteSocketAddress.toString();
+                        if(!logged){
+                            dos.writeUTF("530 Not logged in")
+                        }else{
+                            val port = Integer.parseInt(msgRecv.substring(5))
+                            val clientAddress = socket!!.remoteSocketAddress.toString();
 //                        println("***************************"+clientAddress.substring(1,clientAddress.indexOf(':')))
-                        DataConnectionThread("NOOP",clientAddress.substring(1,clientAddress.indexOf(':')),port).start()
-                        dos.writeUTF("connected!")
+                            DataConnectionThread("NOOP",clientAddress.substring(1,clientAddress.indexOf(':')),port).start()
+                            dos.writeUTF("connected!")
+                        }
                     }else if(msgRecv.startsWith("PASV")){
-                        dos.writeUTF("PORTP 11003")
-                        ServerPort(11003).startService()
+                        if(!logged){
+                            dos.writeUTF("530 Not logged in")
+                        }else {
+                            dos.writeUTF("PORTP 11003")
+                            ServerPort(11003).startService()
+                        }
                     }else{
                         dos.writeUTF("getMessage:$msgRecv")
                     }
+                    //待添加其他指令的客户端操作
                     dos.flush()
                 }
             } catch (e: IOException) {

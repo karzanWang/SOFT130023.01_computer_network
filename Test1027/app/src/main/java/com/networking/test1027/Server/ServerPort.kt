@@ -36,7 +36,6 @@ class ServerPort (var port:Int){
                 while (true) {
                     val msgRecv = dis.readUTF()
                     println("msg from client:$msgRecv")
-                    //服务器的响应机制应该在这里写
                     if(msgRecv.equals("NOOP")){
                         dos.writeUTF("220 Service ready \n")
                     }else{
