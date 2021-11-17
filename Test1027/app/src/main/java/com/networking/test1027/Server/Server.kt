@@ -12,6 +12,7 @@ import java.net.Socket
 
 class Server (var port:Int,h: Handler?){
     var commandSoc: Socket? = null
+    var dataSoc: Socket? = null
     var serverSocket: ServerSocket? = null
     var dos: DataOutputStream? = null
     var dis: DataInputStream? = null
@@ -51,8 +52,10 @@ class Server (var port:Int,h: Handler?){
                     if(msgRecv.equals("NOOP")){
                         dos.writeUTF("220 Service ready \n")
                     }else if(msgRecv.startsWith("PORT")){
-                        val port = Integer.parseInt(msgRecv.substring(5,msgRecv.length-1))
-                        DataConnectionThread("NOOP",socket!!.remoteSocketAddress.toString(),port).start()
+                        val port = Integer.parseInt(msgRecv.substring(5))
+                        val clientAddress = socket!!.remoteSocketAddress.toString();
+                        println("***************************"+clientAddress.substring(1,clientAddress.indexOf(':')))
+                        DataConnectionThread("NOOP",clientAddress.substring(1,clientAddress.indexOf(':')),port).start()
                         dos.writeUTF("connected!\n")
                     }else if(msgRecv.startsWith("PASV")){
                         dos.writeUTF("PORTP 9999\n")
@@ -77,15 +80,16 @@ class Server (var port:Int,h: Handler?){
         var port:Int = 0
         var server_ip:String? = null
         override fun run() {
-            if (commandSoc == null) {
+            if (dataSoc == null) {
                 try {
                     if ("" == server_ip) {
                         return
                     }
-                    commandSoc = Socket(server_ip,port)
+                    println(server_ip)
+                    dataSoc = Socket(server_ip,port)
                     //获取socket的输入输出流
-                    dis = DataInputStream(commandSoc!!.getInputStream())
-                    dos = DataOutputStream(commandSoc!!.getOutputStream())
+                    dis = DataInputStream(dataSoc!!.getInputStream())
+                    dos = DataOutputStream(dataSoc!!.getOutputStream())
                 } catch (e: IOException) {
                     // TODO Auto-generated catch block
                     e.printStackTrace()

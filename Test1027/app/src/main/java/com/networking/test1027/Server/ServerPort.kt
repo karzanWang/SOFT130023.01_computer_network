@@ -41,7 +41,7 @@ class ServerPort (var port:Int){
                         dos.writeUTF("220 Service ready \n")
                     }else if(msgRecv.startsWith("PORT")){
                         val port = Integer.parseInt(msgRecv.substring(5))
-                        socket!!.remoteSocketAddress
+                        println(socket!!.remoteSocketAddress)
                         dos.writeUTF("connected!\n")
                     }else{
                         dos.writeUTF("getMessage:$msgRecv\n")

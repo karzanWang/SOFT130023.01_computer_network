@@ -65,7 +65,7 @@ class Client(h: Handler?) {
         }
         fun clientOperate(msg: String?){
             if(msg?.startsWith("PORT")==true){
-                val port = Integer.parseInt(msg.substring(5,msg.length-1));
+                val port = Integer.parseInt(msg.substring(5));
                 Thread { ClientPort(port).startService() }
                     .start()
             }else if(msg?.startsWith("PASV")==true){
