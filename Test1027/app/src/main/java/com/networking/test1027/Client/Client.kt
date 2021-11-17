@@ -10,6 +10,7 @@ import java.io.IOException
 import java.net.Socket
 
 class Client(h: Handler?) {
+    var dataSoc: Socket? = null
     var commandSoc: Socket? = null
     var dos: DataOutputStream? = null
     var dis: DataInputStream? = null
@@ -80,15 +81,16 @@ class Client(h: Handler?) {
         var message: String? = null
         var port:Int = 0
         override fun run() {
-            if (commandSoc == null) {
+            if (dataSoc == null) {
                 try {
                     if ("" == server_ip) {
                         return
                     }
-                    commandSoc = Socket(server_ip,port)
+                    println(server_ip);
+                    dataSoc = Socket(server_ip,port)
                     //获取socket的输入输出流
-                    dis = DataInputStream(commandSoc!!.getInputStream())
-                    dos = DataOutputStream(commandSoc!!.getOutputStream())
+                    dis = DataInputStream(dataSoc!!.getInputStream())
+                    dos = DataOutputStream(dataSoc!!.getOutputStream())
                 } catch (e: IOException) {
                     // TODO Auto-generated catch block
                     e.printStackTrace()

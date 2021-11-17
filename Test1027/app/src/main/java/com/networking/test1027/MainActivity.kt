@@ -39,10 +39,10 @@ class MainActivity : AppCompatActivity() {
     var tv_reply: TextView? = null //服务器回复的消息
     var tv_reply_Server: TextView? = null
     //下面四个是显示当前机器的ip地址用的
-    private var ipTextView: TextView? = null
-    private var nameTextView: TextView? = null
-    private var mConnectivityManager: ConnectivityManager? = null
-    private var mActiveNetInfo: NetworkInfo? = null
+//    private var ipTextView: TextView? = null
+//    private var nameTextView: TextView? = null
+//    private var mConnectivityManager: ConnectivityManager? = null
+//    private var mActiveNetInfo: NetworkInfo? = null
     //显示或处理服务器返回数据
     var handler: Handler? = null
     var handler_Server: Handler? = null
@@ -77,74 +77,24 @@ class MainActivity : AppCompatActivity() {
         handler = Handler { msg: Message ->
             val b = msg.data //获取消息中的Bundle对象
             val str = b.getString("data") //获取键为data的字符串的值
-            tv_reply?.text = str+tv_reply?.text
+            tv_reply?.text = str+"\n"+tv_reply?.text
             client?.dealWithMsg(str)
             false
         }
         handler_Server = Handler { msg: Message ->
             val b = msg.data //获取消息中的Bundle对象
             val str = b.getString("data") //获取键为data的字符串的值
-            tv_reply_Server?.text = str+tv_reply_Server?.text
+            tv_reply_Server?.text = str+"\n"+tv_reply_Server?.text
             client?.dealWithMsg(str)
             false
         }
-        nameTextView = findViewById<TextView>(R.id.nametextview)
-        ipTextView = findViewById<TextView>(R.id.ipTextView)
-        mConnectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager? //获取系统的连接服务
-        mActiveNetInfo = mConnectivityManager?.getActiveNetworkInfo() //获取网络连接的信息
-        if (mActiveNetInfo == null) myDialog() else setUpInfo()
+//        nameTextView = findViewById<TextView>(R.id.nametextview)
+//        ipTextView = findViewById<TextView>(R.id.ipTextView)
+//        mConnectivityManager =
+//            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager? //获取系统的连接服务
+//        mActiveNetInfo = mConnectivityManager?.getActiveNetworkInfo() //获取网络连接的信息
+//        if (mActiveNetInfo == null) myDialog() else setUpInfo()
 
-    }
-    val iPAddress: String?
-        get() {
-            val info: NetworkInfo? = mConnectivityManager?.getActiveNetworkInfo()
-            if (info != null && info.isConnected()) {
-                if (info.getType() == ConnectivityManager.TYPE_MOBILE || info.getType() == ConnectivityManager.TYPE_WIFI) { //当前使用2G/3G/4G网络
-                    try {
-                        val en = NetworkInterface.getNetworkInterfaces()
-                        while (en.hasMoreElements()) {
-                            val intf = en.nextElement()
-                            val enumIpAddr = intf.inetAddresses
-                            while (enumIpAddr.hasMoreElements()) {
-                                val inetAddress = enumIpAddr.nextElement()
-                                if (!inetAddress.isLoopbackAddress && inetAddress is Inet4Address) {
-                                    return inetAddress.getHostAddress()
-                                }
-                            }
-                        }
-                    } catch (e: SocketException) {
-                        e.printStackTrace()
-                    }
-                }
-            } else { //当前无网络连接,请在设置中打开网络
-                return null
-            }
-            return null
-        }
-    //显示地址
-    @SuppressLint("SetTextI18n")
-    fun setUpInfo() {
-        if(iPAddress?.startsWith("192.168") == true){
-            nameTextView?.setText("获取WIFI环境下地址成功，请通过此IP地址连接！")
-        }else{
-            nameTextView?.setText("获取WIFI环境下地址失败，请建立热点或连接已有WIFI！")
-        }
-        ipTextView?.setText("IP地址：$iPAddress")
-    }
-
-    private fun myDialog() {
-        val mDialog: AlertDialog = AlertDialog.Builder(this@MainActivity)
-            .setTitle("注意")
-            .setMessage("当前网络不可用，请检查网络！")
-            .setPositiveButton("确定", object : DialogInterface.OnClickListener {
-                override fun onClick(dialog: DialogInterface, which: Int) {
-                    dialog.dismiss()
-                    this@MainActivity.finish()
-                }
-            })
-            .create() //创建这个对话框
-        mDialog.show() //显示这个对话框
     }
 
     //新建一个子线程，实现socket通信

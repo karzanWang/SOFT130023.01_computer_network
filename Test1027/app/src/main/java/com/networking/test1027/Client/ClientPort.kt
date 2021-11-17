@@ -36,7 +36,9 @@ class ClientPort (var port:Int){
                     println("msg from server:$msgRecv")
                     //服务器的响应机制应该在这里写
                     if(msgRecv.equals("NOOP")){
-                        dos.writeUTF("220 Client ready \n")
+                        dos.writeUTF("220 Client ready ")
+                    }else{
+                        dos.writeUTF("msg from server:$msgRecv")
                     }
                     dos.flush()
                 }

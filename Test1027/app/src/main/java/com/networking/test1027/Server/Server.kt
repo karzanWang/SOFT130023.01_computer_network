@@ -47,21 +47,25 @@ class Server (var port:Int,h: Handler?){
                 val dos = DataOutputStream(socket!!.getOutputStream())
                 while (true) {
                     val msgRecv = dis.readUTF()
-                    println("msg from client:$msgRecv")
+                    val msg = Message()
+                    val b = Bundle()
+                    b.putString("data", "msg from client:$msgRecv")
+                    msg.data = b
+                    handler!!.sendMessage(msg)
                     //服务器的响应机制应该在这里写
                     if(msgRecv.equals("NOOP")){
                         dos.writeUTF("220 Service ready \n")
                     }else if(msgRecv.startsWith("PORT")){
                         val port = Integer.parseInt(msgRecv.substring(5))
                         val clientAddress = socket!!.remoteSocketAddress.toString();
-                        println("***************************"+clientAddress.substring(1,clientAddress.indexOf(':')))
+//                        println("***************************"+clientAddress.substring(1,clientAddress.indexOf(':')))
                         DataConnectionThread("NOOP",clientAddress.substring(1,clientAddress.indexOf(':')),port).start()
-                        dos.writeUTF("connected!\n")
+                        dos.writeUTF("connected!")
                     }else if(msgRecv.startsWith("PASV")){
-                        dos.writeUTF("PORTP 9999\n")
-                        ServerPort(9999).startService()
+                        dos.writeUTF("PORTP 11003")
+                        ServerPort(11003).startService()
                     }else{
-                        dos.writeUTF("getMessage:$msgRecv\n")
+                        dos.writeUTF("getMessage:$msgRecv")
                     }
                     dos.flush()
                 }
