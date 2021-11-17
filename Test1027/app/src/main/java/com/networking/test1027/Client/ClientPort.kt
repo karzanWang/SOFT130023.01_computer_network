@@ -1,5 +1,3 @@
-package com.networking.test1027.Server
-
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -7,7 +5,7 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 
-class Server (var port:Int){
+class ClientPort (var port:Int){
     var serverSocket: ServerSocket? = null
     fun startService() {
         try {
@@ -35,14 +33,10 @@ class Server (var port:Int){
                 val dos = DataOutputStream(socket!!.getOutputStream())
                 while (true) {
                     val msgRecv = dis.readUTF()
-                    println("msg from client:$msgRecv")
+                    println("msg from server:$msgRecv")
                     //服务器的响应机制应该在这里写
                     if(msgRecv.equals("NOOP")){
-                        dos.writeUTF("220 Service ready \n")
-                    }else if(msgRecv.equals("ftp (host) multics<CR>")){
-                        dos.writeUTF("220 Service ready <CRLF>\n")
-                    }else{
-                        dos.writeUTF("getMessage:$msgRecv\n")
+                        dos.writeUTF("220 Client ready \n")
                     }
                     dos.flush()
                 }
