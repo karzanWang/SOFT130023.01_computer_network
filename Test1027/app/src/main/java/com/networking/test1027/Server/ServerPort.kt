@@ -1,8 +1,5 @@
 package com.networking.test1027.Server
 
-import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
@@ -10,16 +7,8 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 
-class Server (var port:Int,h: Handler?){
-    var commandSoc: Socket? = null
+class ServerPort (var port:Int){
     var serverSocket: ServerSocket? = null
-    var dos: DataOutputStream? = null
-    var dis: DataInputStream? = null
-    var messageRecv: String? = null
-    var handler: Handler? = null
-    init {
-        handler = h
-    }
     fun startService() {
         try {
             var socket: Socket? = null
@@ -51,12 +40,9 @@ class Server (var port:Int,h: Handler?){
                     if(msgRecv.equals("NOOP")){
                         dos.writeUTF("220 Service ready \n")
                     }else if(msgRecv.startsWith("PORT")){
-                        val port = Integer.parseInt(msgRecv.substring(5,msgRecv.length-1))
-                        DataConnectionThread("NOOP",socket!!.remoteSocketAddress.toString(),port).start()
+                        val port = Integer.parseInt(msgRecv.substring(5))
+                        socket!!.remoteSocketAddress
                         dos.writeUTF("connected!\n")
-                    }else if(msgRecv.startsWith("PASV")){
-                        dos.writeUTF("PORTP 9999\n")
-                        ServerPort(9999).startService()
                     }else{
                         dos.writeUTF("getMessage:$msgRecv\n")
                     }
@@ -72,49 +58,7 @@ class Server (var port:Int,h: Handler?){
             this.socket = socket
         }
     }
-    internal inner class DataConnectionThread(msg: String?,s_ip:String?,p: Int) : Thread() {
-        var message: String? = null
-        var port:Int = 0
-        var server_ip:String? = null
-        override fun run() {
-            if (commandSoc == null) {
-                try {
-                    if ("" == server_ip) {
-                        return
-                    }
-                    commandSoc = Socket(server_ip,port)
-                    //获取socket的输入输出流
-                    dis = DataInputStream(commandSoc!!.getInputStream())
-                    dos = DataOutputStream(commandSoc!!.getOutputStream())
-                } catch (e: IOException) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace()
-                }
-            }
-            try {
-                serverOperate(message)
-                dos!!.writeUTF(message)
-                dos!!.flush()
-                messageRecv = dis!!.readUTF() //如果没有收到数据，会阻塞
-                val msg = Message()
-                val b = Bundle()
-                b.putString("data", messageRecv)
-                msg.data = b
-                handler!!.sendMessage(msg)
-            } catch (e: IOException) {
-                // TODO Auto-generated catch block
-                e.printStackTrace()
-            }
-        }
-        fun serverOperate(msg: String?){
-            println("get:$msg")
-        }
-        init {
-            port = p
-            message = msg
-            server_ip = s_ip
-        }
-    }
+
     init {
 
         //输出服务器的IP地址

@@ -81,5 +81,19 @@
             android:layout_marginTop="10dp"
             android:text=""
             android:textSize="16sp"/>
+        <TextView
+            android:id="@+id/tv_reply_title_server"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="客户端返回消息：\n"
+            android:textSize="20sp"/>
+        <TextView
+            android:id="@+id/tv_reply_server"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text=""
+            android:textSize="16sp"/>
     </LinearLayout>
 </LinearLayout>

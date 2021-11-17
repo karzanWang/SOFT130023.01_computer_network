@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
@@ -21,6 +22,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.networking.test1027.Client.Client
 import com.networking.test1027.Server.Server
 import com.networking.test1027.databinding.ActivityMainBinding
 import java.io.DataInputStream
@@ -35,18 +37,17 @@ class MainActivity : AppCompatActivity() {
     var bt_communicate: Button? = null //发送
     var bt_startServer: Button? = null //启动服务端
     var tv_reply: TextView? = null //服务器回复的消息
+    var tv_reply_Server: TextView? = null
     //下面四个是显示当前机器的ip地址用的
     private var ipTextView: TextView? = null
     private var nameTextView: TextView? = null
     private var mConnectivityManager: ConnectivityManager? = null
     private var mActiveNetInfo: NetworkInfo? = null
-    //流
+    //显示或处理服务器返回数据
     var handler: Handler? = null
-    var commandSoc: Socket? = null
-    var dataSoc: Socket? = null
-    var dos: DataOutputStream? = null
-    var dis: DataInputStream? = null
-    var messageRecv: String? = null
+    var handler_Server: Handler? = null
+    //客户端
+    var client: Client? = null
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,28 +58,34 @@ class MainActivity : AppCompatActivity() {
         bt_communicate = findViewById(R.id.bt_communicate)
         bt_startServer = findViewById(R.id.bt_startServer)
         tv_reply = findViewById(R.id.tv_reply)
+        tv_reply_Server = findViewById(R.id.tv_reply_server)
         bt_startServer?.setOnClickListener(View.OnClickListener { v: View? ->
-            Thread { Server(9998).startService() }
+            Thread { Server(9998,handler_Server).startService() }
                 .start()
             Toast.makeText(this, "服务已启动", Toast.LENGTH_SHORT).show()
             bt_startServer?.isEnabled = false
         })
         bt_connect?.setOnClickListener(View.OnClickListener { v: View? ->
-            ConnectionThread("NOOP").start()
+            client = Client(handler);
+            client?.server_ip = et_ip?.text.toString()
+            client?.connectServer("NOOP")
             et_ip?.isEnabled = false
         })
         bt_communicate?.setOnClickListener(View.OnClickListener { v: View? ->
-            ConnectionThread(et_message?.getText().toString()).start()
+            client?.connectServer(et_message?.getText().toString())
         })
         handler = Handler { msg: Message ->
             val b = msg.data //获取消息中的Bundle对象
             val str = b.getString("data") //获取键为data的字符串的值
             tv_reply?.text = str+tv_reply?.text
-
-            if(str?.startsWith("PORTP")==true){
-                val port = Integer.parseInt(str.substring(6))
-                DataConnectionThread("HELLO",port).start()
-            }
+            client?.dealWithMsg(str)
+            false
+        }
+        handler_Server = Handler { msg: Message ->
+            val b = msg.data //获取消息中的Bundle对象
+            val str = b.getString("data") //获取键为data的字符串的值
+            tv_reply_Server?.text = str+tv_reply_Server?.text
+            client?.dealWithMsg(str)
             false
         }
         nameTextView = findViewById<TextView>(R.id.nametextview)
@@ -141,97 +148,5 @@ class MainActivity : AppCompatActivity() {
     }
 
     //新建一个子线程，实现socket通信
-    internal inner class ConnectionThread(msg: String?) : Thread() {
-        var message: String? = null
-        override fun run() {
-            if (commandSoc == null) {
-                try {
-                    if ("" == et_ip?.text.toString()) {
-                        return
-                    }
-                    commandSoc = Socket(et_ip?.text.toString(),9998)
-                    //获取socket的输入输出流
-                    dis = DataInputStream(commandSoc!!.getInputStream())
-                    dos = DataOutputStream(commandSoc!!.getOutputStream())
-                } catch (e: IOException) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace()
-                }
-            }
-            try {
-                clientOperate(message)
-                dos!!.writeUTF(message)
-                dos!!.flush()
-                messageRecv = dis!!.readUTF() //如果没有收到数据，会阻塞
-                val msg = Message()
-                val b = Bundle()
-                b.putString("data", messageRecv)
-                msg.data = b
-                handler!!.sendMessage(msg)
-            } catch (e: IOException) {
-                // TODO Auto-generated catch block
-                e.printStackTrace()
-            }
-        }
-        fun clientOperate(msg: String?){
-            if(msg?.startsWith("PORT")==true){
-                val port = Integer.parseInt(msg.substring(5));
-                Thread { ClientPort(port).startService() }
-                    .start()
-            }else if(msg?.startsWith("PASV")==true){
-                println("PASV")
-            }
-        }
-        init {
-            message = msg
-        }
-    }
 
-    internal inner class DataConnectionThread(msg: String?,p: Int) : Thread() {
-        var message: String? = null
-        var port: Int = 0
-        override fun run() {
-            if (commandSoc == null) {
-                try {
-                    if ("" == et_ip?.text.toString()) {
-                        return
-                    }
-                    commandSoc = Socket(et_ip?.text.toString(), port)
-                    //获取socket的输入输出流
-                    dis = DataInputStream(commandSoc!!.getInputStream())
-                    dos = DataOutputStream(commandSoc!!.getOutputStream())
-                } catch (e: IOException) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace()
-                }
-            }
-            try {
-                clientOperate(message)
-                dos!!.writeUTF(message)
-                dos!!.flush()
-                messageRecv = dis!!.readUTF() //如果没有收到数据，会阻塞
-                val msg = Message()
-                val b = Bundle()
-                b.putString("data", messageRecv)
-                msg.data = b
-                handler!!.sendMessage(msg)
-            } catch (e: IOException) {
-                // TODO Auto-generated catch block
-                e.printStackTrace()
-            }
-        }
-        fun clientOperate(msg: String?){
-            if(msg?.startsWith("PORT")==true){
-                val port = Integer.parseInt(msg.substring(5));
-                Thread { ClientPort(port).startService() }
-                    .start()
-            }else if(msg?.startsWith("PASV")==true){
-                println("PASV")
-            }
-        }
-        init {
-            message = msg
-            port = p
-        }
-    }
 }
