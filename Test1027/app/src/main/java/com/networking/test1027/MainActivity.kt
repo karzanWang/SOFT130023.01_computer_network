@@ -25,19 +25,20 @@ import androidx.navigation.ui.setupWithNavController
 import com.networking.test1027.Client.Client
 import com.networking.test1027.Server.Server
 import com.networking.test1027.databinding.ActivityMainBinding
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
 import java.net.*
 
 class MainActivity : AppCompatActivity() {
-    var et_message: EditText? = null //需要发送的内容
-    var et_ip: EditText? = null //输入的IP地址
-    var bt_connect: Button? = null //连接测试
-    var bt_communicate: Button? = null //发送
-    var bt_startServer: Button? = null //启动服务端
-    var tv_reply: TextView? = null //服务器回复的消息
-    var tv_reply_Server: TextView? = null
+//    var et_message: EditText? = null //需要发送的内容
+//    var et_ip: EditText? = null //输入的IP地址
+//    var bt_connect: Button? = null //连接测试
+//    var bt_communicate: Button? = null //发送
+//    var bt_startServer: Button? = null //启动服务端
+//    var tv_reply: TextView? = null //服务器回复的消息
+//    var tv_reply_Server: TextView? = null
     //下面四个是显示当前机器的ip地址用的
 //    private var ipTextView: TextView? = null
 //    private var nameTextView: TextView? = null
@@ -52,13 +53,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        et_message = findViewById(R.id.et_message)
-        et_ip = findViewById(R.id.et_ip)
-        bt_connect = findViewById(R.id.bt_connect)
-        bt_communicate = findViewById(R.id.bt_communicate)
-        bt_startServer = findViewById(R.id.bt_startServer)
-        tv_reply = findViewById(R.id.tv_reply)
-        tv_reply_Server = findViewById(R.id.tv_reply_server)
+//        et_message = findViewById(R.id.et_message)
+//        et_ip = findViewById(R.id.et_ip)
+//        bt_connect = findViewById(R.id.bt_connect)
+//        bt_communicate = findViewById(R.id.bt_communicate)
+//        bt_startServer = findViewById(R.id.bt_startServer)
+//        tv_reply = findViewById(R.id.tv_reply)
+//        tv_reply_Server = findViewById(R.id.tv_reply_server)
         bt_startServer?.setOnClickListener(View.OnClickListener { v: View? ->
             Thread { Server(9998,handler_Server).startService() }
                 .start()
@@ -84,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         handler_Server = Handler { msg: Message ->
             val b = msg.data //获取消息中的Bundle对象
             val str = b.getString("data") //获取键为data的字符串的值
-            tv_reply_Server?.text = str+"\n"+tv_reply_Server?.text
+            tv_reply_server?.text = str+"\n"+tv_reply_server?.text
             client?.dealWithMsg(str)
             false
         }
