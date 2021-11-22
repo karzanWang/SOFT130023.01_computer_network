@@ -44,22 +44,20 @@ class MainActivity : AppCompatActivity() {
 //    private var nameTextView: TextView? = null
 //    private var mConnectivityManager: ConnectivityManager? = null
 //    private var mActiveNetInfo: NetworkInfo? = null
+
     //显示或处理服务器返回数据
     var handler: Handler? = null
     var handler_Server: Handler? = null
+
     //客户端
     var client: Client? = null
+
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        et_message = findViewById(R.id.et_message)
-//        et_ip = findViewById(R.id.et_ip)
-//        bt_connect = findViewById(R.id.bt_connect)
-//        bt_communicate = findViewById(R.id.bt_communicate)
-//        bt_startServer = findViewById(R.id.bt_startServer)
-//        tv_reply = findViewById(R.id.tv_reply)
-//        tv_reply_Server = findViewById(R.id.tv_reply_server)
+
+
         bt_startServer?.setOnClickListener(View.OnClickListener { v: View? ->
             Thread { Server(9998,handler_Server).startService() }
                 .start()

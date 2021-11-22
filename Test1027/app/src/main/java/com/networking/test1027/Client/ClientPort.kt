@@ -6,14 +6,14 @@ import java.net.ServerSocket
 import java.net.Socket
 
 class ClientPort (var port:Int){
-    var serverSocket: ServerSocket? = null
+    var clientSocket: ServerSocket? = null
     fun startService() {
         try {
             var socket: Socket? = null
             println("waiting...")
             //等待连接，每建立一个连接，就新建一个线程
             while (true) {
-                socket = serverSocket!!.accept() //等待一个客户端的连接，在连接之前，此方法是阻塞的
+                socket = clientSocket!!.accept() //等待一个客户端的连接，在连接之前，此方法是阻塞的
                 println("connect to" + socket.inetAddress + ":" + socket.localPort)
                 ConnectThread(socket).start()
             }
@@ -59,7 +59,7 @@ class ClientPort (var port:Int){
         try {
             val addr = InetAddress.getLocalHost()
             println("local host:$addr")
-            serverSocket = ServerSocket(port)
+            clientSocket = ServerSocket(port)
             println("0k")
         } catch (e: IOException) {
             // TODO Auto-generated catch block

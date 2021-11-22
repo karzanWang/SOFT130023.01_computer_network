@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.home.HomeFragment" >
+
+
+    <EditText
+        android:id="@+id/home_edittext_ip"
+        android:layout_width="290dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="44dp"
+        android:hint="请输入ftp地址"
+        app:layout_constraintBottom_toTopOf="@+id/home_edittext_message"
+        app:layout_constraintEnd_toStartOf="@+id/home_bt_connect"
+        app:layout_constraintHorizontal_bias="0.482"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.45" />
+
+    <Button
+        android:id="@+id/home_bt_connect"
+        android:layout_width="89dp"
+        android:layout_height="46dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginEnd="8dp"
+        android:text="连接"
+        app:layout_constraintBottom_toTopOf="@+id/home_bt_communicate"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/home_edittext_ip"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.97" />
+
+    <EditText
+        android:id="@+id/home_edittext_message"
+        android:layout_width="288dp"
+        android:layout_height="63dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginBottom="36dp"
+        android:hint="请输入发送信息"
+        app:layout_constraintBottom_toTopOf="@+id/home_tv_reply_title"
+        app:layout_constraintEnd_toStartOf="@+id/home_bt_communicate"
+        app:layout_constraintHorizontal_bias="0.3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/home_edittext_ip" />
+
+    <Button
+        android:id="@+id/home_bt_communicate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="11dp"
+        android:layout_marginBottom="80dp"
+        android:text="发送"
+        app:layout_constraintBottom_toTopOf="@+id/home_tv_reply"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.315"
+        app:layout_constraintStart_toEndOf="@+id/home_edittext_message"
+        app:layout_constraintTop_toBottomOf="@+id/home_bt_connect" />
+
+    <TextView
+        android:id="@+id/home_tv_reply_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="服务端返回消息:"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/home_tv_reply"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.465"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/home_edittext_message" />
+
+    <TextView
+        android:id="@+id/home_tv_reply"
+        android:layout_width="405dp"
+        android:layout_height="380dp"
+        android:layout_marginBottom="96dp"
+        android:text=""
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/home_tv_reply_title"
+        app:layout_constraintVertical_bias="1.0" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
