@@ -122,6 +122,34 @@ class FTPServer(
 //
 //    }
 
+    //    private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
+//        return when (cmd.uppercase()) {
+//            "SYST" -> this::syst
+//            "FEAT" -> this::feat
+//            "MDTM" -> this::mdtm
+//            "USER" -> this::user
+//            "PASS" -> this::pass
+//            "TYPE" -> this::type
+//            "PWD" -> this::pwd
+//            "CDUP" -> this::cdup
+//            "CWD" -> this::cwd
+//            "LIST" -> this::list
+//            "RNFR" -> this::rnfr
+//            "RNTO" -> this::rnto
+//            "RETR" -> this::retr
+//            "STOR" -> this::stor
+//            "DELE" -> this::dele
+//            "SIZE" -> this::size
+//            "EPSV" -> this::epsv
+//            "PASV" -> this::pasv
+//            "EPRT" -> this::eprt
+//            "PORT" -> this::port
+//            "QUIT" -> this::quit
+//
+//            else -> this::error
+//        }
+//    }
+
 
     private fun sendFileAscii(path: Path, out: OutputStream) {
         PrintStream(out).use { printStream ->
