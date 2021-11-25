@@ -1,5 +1,8 @@
 package com.fdu.ftp_server
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -8,6 +11,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.google.android.material.snackbar.Snackbar
@@ -22,14 +26,20 @@ import androidx.appcompat.app.AppCompatActivity
 import com.fdu.ftp_server.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.fragment_home.*
 import kotlinx.coroutines.InternalCoroutinesApi
+import server.FTPServer
 import server.FTPSocketManger
+import java.net.Inet4Address
+import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-
+    private var ipTextView: TextView? = null
+    private var nameTextView: TextView? = null
+    private var mConnectivityManager: ConnectivityManager? = null
+    private var mActiveNetInfo: NetworkInfo? = null
 
 
     //显示或处理服务器返回数据
@@ -73,6 +83,11 @@ class MainActivity : AppCompatActivity() {
             home_tv_reply_server?.text = str + "\n" + home_tv_reply_server?.text
             false
         }
+        nameTextView = findViewById<TextView>(R.id.nametextview)
+        ipTextView = findViewById<TextView>(R.id.ipTextView)
+        mConnectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager? //获取系统的连接服务
+        mActiveNetInfo = mConnectivityManager?.getActiveNetworkInfo() //获取网络连接的信息
     }
 
 //    override fun onCreateOptionsMenu(menu: Menu): Boolean {

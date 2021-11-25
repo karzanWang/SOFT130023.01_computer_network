@@ -2,12 +2,15 @@ package com.fdu.ftp_client
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
@@ -22,7 +25,10 @@ import com.fdu.ftp_client.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.fragment_home.*
 @RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : AppCompatActivity() {
-
+        private var ipTextView: TextView? = null
+    private var nameTextView: TextView? = null
+    private var mConnectivityManager: ConnectivityManager? = null
+    private var mActiveNetInfo: NetworkInfo? = null
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
 
@@ -82,6 +88,12 @@ class MainActivity : AppCompatActivity() {
             home_tv_reply?.text = str+"\n"+home_tv_reply?.text
             false
         }
+
+        nameTextView = findViewById<TextView>(R.id.nametextview)
+        ipTextView = findViewById<TextView>(R.id.ipTextView)
+        mConnectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager? //获取系统的连接服务
+        mActiveNetInfo = mConnectivityManager?.getActiveNetworkInfo() //获取网络连接的信息
     }
 
 //    override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -104,4 +116,6 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
+
+
 }

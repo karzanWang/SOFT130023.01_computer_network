@@ -331,7 +331,7 @@ class FTPServer(
     }
 
 
-    private fun getAddress() = Inet4Address.getLocalHost()
+    public fun getAddress() = Inet4Address.getLocalHost()
 
     private fun pasvMsg(port: Int) {
         assert(port < UShort.MAX_VALUE.toInt())
