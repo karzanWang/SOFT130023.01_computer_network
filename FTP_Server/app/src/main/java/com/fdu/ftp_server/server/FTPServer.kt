@@ -466,7 +466,7 @@ class FTPServer(
     private fun stor(arg: String): Pair<Int, String> {
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
         val dataSocket = dataSocket
-
+        printLog(path)
         return if (dataSocket != null) {
             try {
                 store(Path(path), dataSocket.getInputStream(), transferType)

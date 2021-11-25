@@ -114,6 +114,9 @@ class FTPClient(
         if(dispatchSend(message)){
             send(message)
         }
+        if(message.split(" ")[0].uppercase().trim()=="RETR"){
+            retr(message)
+        }
     }
     /**
      * 向client发送消息，同时log
@@ -206,7 +209,7 @@ class FTPClient(
         try{
             when (cmd.split(" ")[0].uppercase().trim()) {
                 "TYPE" -> type(cmd)
-                "RETR" -> retr(cmd)
+
                 "STOR" -> stor(cmd)
                 "STRU" -> stru(cmd)
                 "MODE" -> mode(cmd)
@@ -365,20 +368,19 @@ class FTPClient(
         return transferred
     }
 
-    private fun retr(arg: String): Pair<Int, String> {
+    private fun retr(arg: String){
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg.split(" ")[1]
         printLog(path)
         val dataSocket = dataSocket
 
-        return if (dataSocket != null) {
+        if (dataSocket != null) {
             try {
                 store(Path(path), dataSocket.getInputStream(), transferType)
                 Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
             } catch (e: IOException) {
-                Pair(426, "An IO error occurred")
+                printLog(e.message.toString())
             }
         } else {
-            Pair(NOT_CONNECTED, "Data connection not established")
         }
     }
 }
