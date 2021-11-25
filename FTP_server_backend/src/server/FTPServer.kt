@@ -1,5 +1,6 @@
 package server
 
+import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
 import java.io.OutputStream
@@ -173,7 +174,7 @@ class FTPServer(
             "NOOP" -> this::noop
 //            "STRU" -> this::stru
 //            "PASV" -> this::pasv
-//            "EPRT" -> this::eprt
+            "MODE" -> this::mode
 //            "PORT" -> this::port
             "QUIT" -> this::quit
 
@@ -243,6 +244,21 @@ class FTPServer(
             Pair(COMMAND_OK, "Changed transfer type to $transferType")
         } catch (e: NoSuchElementException) {
             Pair(ERROR_ARGS, "Unrecognized type")
+        }
+
+    }
+
+    private fun mode(arg: String): Pair<Int, String> {
+        val mode = arg
+
+        return try {
+            val transferMode = TransferModeEnum.values().first {
+                it.code == mode
+            }
+            
+            Pair(COMMAND_OK, "Changed transfer mode to $transferMode")
+        } catch (e: NoSuchElementException) {
+            Pair(ERROR_ARGS, "Unrecognized mode")
         }
 
     }
