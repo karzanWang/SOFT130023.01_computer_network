@@ -33,9 +33,25 @@ class FTPServer(
     private var user: User? = null
     private var authenticated = false
 
+    private var dataSocket: Socket? = null
+    private var transferType = TransferTypeEnum.BINARY
+
     init {
         inControl.useDelimiter(DELIMITER);
         hello()
+    }
+
+    private fun closeData() {
+        val dataSocket = dataSocket
+
+        if (dataSocket != null && !dataSocket.isClosed)
+            dataSocket.close()
+    }
+
+    fun destory() {
+        outControl.close()
+        inControl.close()
+        controlSocket.close()
     }
 
 
@@ -91,7 +107,7 @@ class FTPServer(
 
 
     /**
-     * 解析message，区分command， 返回
+     * 解析message，区分command， 返回pair
      */
     private fun parse(message: String): Pair<String, String> {
         val argv = message.split(" ", limit = 2)
@@ -99,6 +115,13 @@ class FTPServer(
         val arg = argv.getOrElse(1) { "" }
 
         return Pair(cmd, arg)
+    }
+
+    private fun split(arg: String): List<String> {
+        return if (arg.isBlank())
+            listOf()
+        else
+            arg.split(" ")
     }
 
     /**
@@ -119,44 +142,58 @@ class FTPServer(
         }
     }
 
-//    /**
-//     * Parses and responds to a request
-//     * @param rawRequest the raw [String] request
-//     */
-//    private fun listenRequest(rawRequest: String) {
-//        printLogIn(rawRequest)
-//
-//        val (cmdName, args) = parse(rawRequest)
-//        val command = dispatch(cmdName)
-//
-//        try {
-//            val response = command(args)
-//            if (response != null)
-//                send(response.first, response.second)
-//
-//        } catch (e: FTPException) {
-//            send(e.code, e.message ?: "")
-//        }
-//
-//    }
+    /**
+     * Parses and responds to a request
+     * @param rawRequest the raw [String] request
+     */
+    private fun listenRequest(rawRequest: String) {
+        printLogIn(rawRequest)
 
-//        private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
-//        return when (cmd.uppercase()) {
-//            "USER" -> this::user
-//            "PASS" -> this::pass
-//            "TYPE" -> this::type
+        val (cmdName, args) = parse(rawRequest)
+        val command = dispatch(cmdName)
+
+        try {
+            val response = command(args)
+            if (response != null)
+                send(response.first, response.second)
+
+        } catch (e: FTPException) {
+            send(e.code, e.message ?: "")
+        }
+
+    }
+
+        private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
+        return when (cmd.uppercase()) {
+            "USER" -> this::user
+            "PASS" -> this::pass
+            "TYPE" -> this::type
 //            "RETR" -> this::retr
 //            "STOR" -> this::stor
-//            "NOOP" -> this::noop
+            "NOOP" -> this::noop
 //            "STRU" -> this::stru
 //            "PASV" -> this::pasv
 //            "EPRT" -> this::eprt
 //            "PORT" -> this::port
-//            "QUIT" -> this::quit
-//
-//            else -> this::error
-//        }
-//    }
+            "QUIT" -> this::quit
+
+            else -> this::noCommand
+        }
+    }
+
+    private fun noCommand(arg: String): Pair<Int, String> {
+        return Pair(COMMAND_NOT_IMPLEMENTED, "Command not implemented.")
+    }
+
+    private fun quit(arg: String): Nothing {
+        val args = split(arg)
+        assertArgc(args, 0)
+        throw QuitEvent()
+    }
+
+    private fun noop(arg: String): Pair<Int, String> {
+        return Pair(SERVICE_RDY, "Service ready")
+    }
 
     private fun user(name: String): Pair<Int, String> {
         return try {
@@ -191,6 +228,23 @@ class FTPServer(
         } else {
             Pair(NOT_CONNECTED, "Wrong password")
         }
+    }
+
+    private fun type(arg: String): Pair<Int, String> {
+        val type = arg
+
+        return try {
+            val transferType = TransferTypeEnum.values().first {
+                it.code == type
+            }
+
+            this.transferType = transferType
+
+            Pair(COMMAND_OK, "Changed transfer type to $transferType")
+        } catch (e: NoSuchElementException) {
+            Pair(ERROR_ARGS, "Unrecognized type")
+        }
+
     }
 
 
