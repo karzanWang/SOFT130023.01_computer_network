@@ -209,7 +209,6 @@ class FTPClient(
         try{
             when (cmd.split(" ")[0].uppercase().trim()) {
                 "TYPE" -> type(cmd)
-
                 "STOR" -> stor(cmd)
                 "STRU" -> stru(cmd.split(" ")[1])
                 "MODE" -> mode(cmd.split(" ")[1])
