@@ -1,11 +1,15 @@
 package server
 
+import server.enum.FileStruEnum
 import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
 import java.io.OutputStream
 import java.io.PrintStream
 import java.io.PrintWriter
+import java.net.BindException
+import java.net.Inet4Address
+import java.net.ServerSocket
 import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,6 +44,27 @@ class FTPServer(
     init {
         inControl.useDelimiter(DELIMITER);
         hello()
+    }
+
+    private fun tryOpenData(port: Int, onOpen: (Int) -> Unit): Socket? {
+        try {
+            ServerSocket(port).use {
+                onOpen(port)
+                return it.accept()
+            }
+        } catch (e: BindException) {
+            return null
+        }
+    }
+
+    private fun openData(onOpen: (Int) -> Unit): Socket? {
+        return try {
+            dataPorts.firstNotNullOf {
+                tryOpenData(it, onOpen)
+            }
+        } catch (e: NoSuchElementException) {
+            null
+        }
     }
 
     private fun closeData() {
@@ -164,7 +189,7 @@ class FTPServer(
 
     }
 
-        private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
+    private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
         return when (cmd.uppercase()) {
             "USER" -> this::user
             "PASS" -> this::pass
@@ -172,8 +197,8 @@ class FTPServer(
 //            "RETR" -> this::retr
 //            "STOR" -> this::stor
             "NOOP" -> this::noop
-//            "STRU" -> this::stru
-//            "PASV" -> this::pasv
+            "STRU" -> this::stru
+            "PASV" -> this::pasv
             "MODE" -> this::mode
 //            "PORT" -> this::port
             "QUIT" -> this::quit
@@ -208,7 +233,7 @@ class FTPServer(
                 Pair(USER_OK, "password needed")
             } else {
                 authenticated = true
-                Pair(COMMAND_OK,  "Logged in as ${newUser.name}")
+                Pair(COMMAND_OK, "Logged in as ${newUser.name}")
             }
 
         } catch (e: NoSuchElementException) {
@@ -255,12 +280,54 @@ class FTPServer(
             val transferMode = TransferModeEnum.values().first {
                 it.code == mode
             }
-            
+
             Pair(COMMAND_OK, "Changed transfer mode to $transferMode")
         } catch (e: NoSuchElementException) {
             Pair(ERROR_ARGS, "Unrecognized mode")
         }
 
+    }
+
+    private fun stru(arg: String): Pair<Int, String> {
+        val stru = arg
+
+        return try {
+            val fileStru = FileStruEnum.values().first {
+                it.code == stru
+            }
+
+            Pair(COMMAND_OK, "Changed FILE STRUCTURE to $fileStru")
+        } catch (e: NoSuchElementException) {
+            Pair(ERROR_ARGS, "Unrecognized structure")
+        }
+
+    }
+
+
+    private fun getAddress() = Inet4Address.getLocalHost()
+
+    private fun pasvMsg(port: Int) {
+        assert(port < UShort.MAX_VALUE.toInt())
+
+        val mod = UByte.MAX_VALUE.toInt()
+        val address = getAddress().address.joinToString()
+
+        send(ENTERING_PASSIVE, "Entering passive mode (${address},${port % mod},${port % mod})")
+    }
+
+    private fun pasv(arg: String): Pair<Int, String>? {
+        val args = split(arg)
+        assertArgc(args, 0)
+        closeData()
+
+        val dataSocket = openData(this::pasvMsg)
+
+        return if (dataSocket != null) {
+            this.dataSocket = dataSocket
+            null
+        } else {
+            Pair(NOT_CONNECTED, "Unable to open a data port for connection")
+        }
     }
 
 
