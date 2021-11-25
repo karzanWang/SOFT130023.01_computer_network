@@ -211,8 +211,8 @@ class FTPClient(
                 "TYPE" -> type(cmd)
 
                 "STOR" -> stor(cmd)
-                "STRU" -> stru(cmd)
-                "MODE" -> mode(cmd)
+                "STRU" -> stru(cmd.split(" ")[1])
+                "MODE" -> mode(cmd.split(" ")[1])
                 "PORT" -> port(cmd)
                 "QUIT" -> quit(cmd)
                 else -> noCommand(cmd)
@@ -236,7 +236,7 @@ class FTPClient(
 
     private fun quit(arg: String) {
             val args = split(arg)
-            assertArgc(args, 0)
+            assertArgc(args, 1)
             throw QuitEvent()
     }
 
