@@ -5,10 +5,7 @@ import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
 import java.io.*
-import java.net.BindException
-import java.net.Inet4Address
-import java.net.ServerSocket
-import java.net.Socket
+import java.net.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -188,6 +185,22 @@ class FTPServer(
 
     }
 
+    fun listenForever() {
+        try {
+            inControl.forEachRemaining {
+                listenRequest((it))
+            }
+
+            throw inControl.ioException()
+        } catch (quit: QuitEvent) {
+            send(DISCONNECTION, "See ya.")
+        } catch (e: SocketTimeoutException) {
+            send(TIMEOUT, "Connection timed out.")
+        } catch (e: IOException) {
+            send(DISCONNECTION, "Fatal connection error")
+        }
+    }
+
     private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
         return when (cmd.uppercase()) {
             "USER" -> this::user
@@ -199,7 +212,7 @@ class FTPServer(
             "STRU" -> this::stru
             "PASV" -> this::pasv
             "MODE" -> this::mode
-//            "PORT" -> this::port
+            "PORT" -> this::port
             "QUIT" -> this::quit
 
             else -> this::noCommand
@@ -381,19 +394,19 @@ class FTPServer(
         }
     }
 
-    private fun retr(arg: String): Pair<Int, String> {
-        val path = pathOf(arg)
-        val dataSocket = dataSocket
-
-        return if (dataSocket != null) {
-            sendFile(path, dataSocket.getOutputStream(), transferType)
-            dataSocket.close()
-
-            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
-        } else {
-            Pair(NOT_CONNECTED, "The data connection is not established")
-        }
-    }
+//    private fun retr(arg: String): Pair<Int, String> {
+//        val path = pathOf(arg)
+//        val dataSocket = dataSocket
+//
+//        return if (dataSocket != null) {
+//            sendFile(path, dataSocket.getOutputStream(), transferType)
+//            dataSocket.close()
+//
+//            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
+//        } else {
+//            Pair(NOT_CONNECTED, "The data connection is not established")
+//        }
+//    }
 
     private fun storeBinary(path: Path, input: InputStream) {
         input.use {
@@ -418,19 +431,19 @@ class FTPServer(
         }
     }
 
-    private fun stor(arg: String): Pair<Int, String> {
-        val path = DEFAULT_ROOT
-        val dataSocket = dataSocket
-
-        return if (dataSocket != null) {
-            try {
-                store(path, dataSocket.getInputStream(), transferType)
-                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
-            } catch (e: IOException) {
-                Pair(426, "An IO error occurred")
-            }
-        } else {
-            Pair(NOT_CONNECTED, "Data connection not established")
-        }
-    }
+//    private fun stor(arg: String): Pair<Int, String> {
+//        val path = DEFAULT_ROOT
+//        val dataSocket = dataSocket
+//
+//        return if (dataSocket != null) {
+//            try {
+//                store(path, dataSocket.getInputStream(), transferType)
+//                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
+//            } catch (e: IOException) {
+//                Pair(426, "An IO error occurred")
+//            }
+//        } else {
+//            Pair(NOT_CONNECTED, "Data connection not established")
+//        }
+//    }
 }
