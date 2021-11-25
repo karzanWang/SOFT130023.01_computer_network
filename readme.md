@@ -53,7 +53,7 @@ val response = command(args)
 
 为了方便log的清楚记录（尤其是server比较难调试），还模仿了rfc文档里边的演示风格封装了用来log的函数，后台输出方便查看问题，后来为了方便直接输出到文件，在ftp功能实现类的参数当中加入了PrintStream类的参数，用来制定log的输出。可以是system.out，也可以是文件，甚至可以是socket。
 
-为了方便调试，直接使用python的socket去发送消息来看log
+为了方便调试，直接使用python的socket去发送消息来看log，这边log的时间好像有点问题，但是影响不大
 
 ```python
 import socket
@@ -68,6 +68,7 @@ data=s.recv(1024)
 print(data)
 s.sendall("quit\n")
 s.close()
+#测试登陆
 ```
 
 ```
@@ -80,6 +81,40 @@ s.close()
 [05:44:31 25/11/21] <--connect1: 221 See ya.
 ```
 
+```python
+import socket
+
+HOST='127.0.0.1'
+PORT=21
+a= socket.socket()
+a.connect((HOST,PORT))
+
+
+host = '127.0.0.1'
+port = 9999
+s= socket.socket()
+s.bind((host, port))
+s.listen(1)
+a.sendall("PORT 127,0,0,1,39,54\n")
+
+clientsocket, addr = s.accept()
+
+print(clientsocket, addr)
+
+a.sendall("QUIT\n")
+s.close()
+a.close()
+#测试port
+```
+
+```
+[09:04:03 25/11/21] <--connect1: 200 Hello world!
+[09:04:03 25/11/21] connect1: PORT 127,0,0,1,39,54-->
+[09:04:03 25/11/21] <--connect1: 200 Connected to /127.0.0.1:9999
+[09:04:03 25/11/21] connect1: QUIT-->
+[09:04:03 25/11/21] <--connect1: 221 See ya.
+```
+
 剩下的只需要考虑具体的功能实现了。文件传输的部分会放到文件传输策略当中。
 
 首先是鉴权，在登录的时候核验账户身份，首先配对用户名，如果是匿名用户直接完成登陆，如果是正确的名字则发送消息和reply code让client发送密码，然后验证。
@@ -88,7 +123,9 @@ MODE和STRU仅做返回消息处理，对实际程序逻辑没有影响。
 
 TYPE的参数会作为传输文件是的transferType，使用枚举类去和用户传过来的code配对（MODE和 STRU的参数配对也是这样子的），会设置类当中的transferType，文件传输的时候会根据这个type来选择传输方式。
 
-PASV模式是比较复杂的，服务器端的逻辑是收到PASV
+服务器端收到PASV之后会尝试打开端口，如果成功打开，会把相关信息返回给client，然后accept()进入阻塞等待连接，然后完成data 连接。
+
+服务器收到port指令的时候会解析出ip地址和端口，然后建立socket连接，成功将返回成功信息，失败则根据错误类型返回（例如地址格式错误，连接建立错误）
 
 ### 文件传输策略
 
