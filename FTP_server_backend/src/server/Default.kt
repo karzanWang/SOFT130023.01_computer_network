@@ -1,5 +1,7 @@
 package server
 
+import kotlin.reflect.jvm.internal.impl.renderer.DescriptorRenderer
+
 
 /**
  *  默认的设置都在这边，可以在这里添加用户，改变端口号等等
@@ -14,3 +16,4 @@ val test = User("test", "test")
 
 var DEFAULT_USERS = mutableSetOf<User>(anonymous, test)
 
+val DEFAULT_ROOT = "/FTP-SERVER"

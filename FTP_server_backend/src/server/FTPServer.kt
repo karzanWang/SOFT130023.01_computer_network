@@ -4,9 +4,7 @@ import server.enum.FileStruEnum
 import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
-import java.io.OutputStream
-import java.io.PrintStream
-import java.io.PrintWriter
+import java.io.*
 import java.net.BindException
 import java.net.Inet4Address
 import java.net.ServerSocket
@@ -40,6 +38,7 @@ class FTPServer(
 
     private var dataSocket: Socket? = null
     private var transferType = TransferTypeEnum.BINARY
+
 
     init {
         inControl.useDelimiter(DELIMITER);
@@ -330,6 +329,34 @@ class FTPServer(
         }
     }
 
+    private fun port(arg: String): Pair<Int, String> {
+        val args = split(arg)
+        assertArgc(args, 1)
+
+        val delimiter = ','
+        val addressStr = args[0]
+
+        return try {
+            val bytes = addressStr.split(delimiter).map(String::toUByte)
+
+            if (bytes.size != 6)
+                return Pair(ERROR_ARGS, "Ill formed address")
+
+            val address = Inet4Address.getByAddress(bytes.subList(0, 4).map(UByte::toByte).toByteArray())
+            val port = bytes.subList(4, 6).map(UByte::toInt).reduce { i1, i2 ->
+                i1 * UByte.MAX_VALUE.toInt() + i2
+            }
+
+            dataSocket = Socket(address, port)
+
+            Pair(COMMAND_OK, "Connected to $address:$port")
+        } catch (e: NumberFormatException) {
+            Pair(ERROR_ARGS, "Ill formed address")
+        } catch (e: IOException) {
+            Pair(ERROR_ARGS, "Failed to connect")
+        }
+    }
+
 
     private fun sendFileAscii(path: Path, out: OutputStream) {
         PrintStream(out).use { printStream ->
@@ -351,6 +378,59 @@ class FTPServer(
         when (transferType) {
             TransferTypeEnum.BINARY -> sendFileBinary(path, out)
             TransferTypeEnum.ASCII -> sendFileAscii(path, out)
+        }
+    }
+
+    private fun retr(arg: String): Pair<Int, String> {
+        val path = pathOf(arg)
+        val dataSocket = dataSocket
+
+        return if (dataSocket != null) {
+            sendFile(path, dataSocket.getOutputStream(), transferType)
+            dataSocket.close()
+
+            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
+        } else {
+            Pair(NOT_CONNECTED, "The data connection is not established")
+        }
+    }
+
+    private fun storeBinary(path: Path, input: InputStream) {
+        input.use {
+            Files.newOutputStream(path).use { out ->
+                input.transferTo(out)
+            }
+        }
+    }
+
+    private fun storeAscii(path: Path, input: InputStream) {
+        PrintStream(Files.newOutputStream(path)).use { out ->
+            Scanner(input).use { scanner ->
+                scanner.forEachRemaining(out::println)
+            }
+        }
+    }
+
+    private fun store(path: Path, input: InputStream, transferType: TransferTypeEnum) {
+        when (transferType) {
+            TransferTypeEnum.BINARY -> storeBinary(path, input)
+            TransferTypeEnum.ASCII -> storeAscii(path, input)
+        }
+    }
+
+    private fun stor(arg: String): Pair<Int, String> {
+        val path = DEFAULT_ROOT
+        val dataSocket = dataSocket
+
+        return if (dataSocket != null) {
+            try {
+                store(path, dataSocket.getInputStream(), transferType)
+                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
+            } catch (e: IOException) {
+                Pair(426, "An IO error occurred")
+            }
+        } else {
+            Pair(NOT_CONNECTED, "Data connection not established")
         }
     }
 }
