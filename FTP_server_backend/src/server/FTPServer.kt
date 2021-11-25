@@ -94,11 +94,29 @@ class FTPServer(
      * 解析message，区分command， 返回
      */
     private fun parse(message: String): Pair<String, String> {
-        val parameters = message.split(" ", limit = 2)
-        val cmd = parameters[0]
-        val arg = parameters.getOrElse(1) { "" }
+        val argv = message.split(" ", limit = 2)
+        val cmd = argv[0]
+        val arg = argv.getOrElse(1) { "" }
 
         return Pair(cmd, arg)
+    }
+
+    /**
+     * 检查参数数量
+     */
+    private fun checkArgc(args: List<String>, argc: Int): Boolean {
+        return argc == args.size
+    }
+
+    private fun assertArgc(args: List<String>, vararg argc: Int) {
+
+        val ok = argc.map {
+            checkArgc(args, it)
+        }.contains(true)
+
+        if (!ok) {
+            throw FTPException(ERROR_ARGS, "This command requires ${argc.joinToString(", ")} argument(s)")
+        }
     }
 
 //    /**
@@ -122,25 +140,15 @@ class FTPServer(
 //
 //    }
 
-    //    private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
+//        private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
 //        return when (cmd.uppercase()) {
-//            "SYST" -> this::syst
-//            "FEAT" -> this::feat
-//            "MDTM" -> this::mdtm
 //            "USER" -> this::user
 //            "PASS" -> this::pass
 //            "TYPE" -> this::type
-//            "PWD" -> this::pwd
-//            "CDUP" -> this::cdup
-//            "CWD" -> this::cwd
-//            "LIST" -> this::list
-//            "RNFR" -> this::rnfr
-//            "RNTO" -> this::rnto
 //            "RETR" -> this::retr
 //            "STOR" -> this::stor
-//            "DELE" -> this::dele
-//            "SIZE" -> this::size
-//            "EPSV" -> this::epsv
+//            "NOOP" -> this::noop
+//            "STRU" -> this::stru
 //            "PASV" -> this::pasv
 //            "EPRT" -> this::eprt
 //            "PORT" -> this::port
@@ -149,6 +157,41 @@ class FTPServer(
 //            else -> this::error
 //        }
 //    }
+
+    private fun user(name: String): Pair<Int, String> {
+        return try {
+            val newUser = DEFAULT_USERS.first {
+                it.name == name
+            }
+
+            user = newUser
+
+            if (newUser.password != null) {
+                Pair(USER_OK, "password needed")
+            } else {
+                authenticated = true
+                Pair(COMMAND_OK,  "Logged in as ${newUser.name}")
+            }
+
+        } catch (e: NoSuchElementException) {
+            Pair(NOT_CONNECTED, "User unknown")
+        }
+
+    }
+
+
+    private fun pass(password: String): Pair<Int, String> {
+        val user = user
+
+        return if (user == null) {
+            Pair(NOT_CONNECTED, "send USER command before")
+        } else if (user.password == password) {
+            authenticated = true
+            Pair(USER_LOGGED_IN, "Logged in as ${user.name}")
+        } else {
+            Pair(NOT_CONNECTED, "Wrong password")
+        }
+    }
 
 
     private fun sendFileAscii(path: Path, out: OutputStream) {

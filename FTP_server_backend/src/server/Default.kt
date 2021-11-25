@@ -10,6 +10,7 @@ const val DEFAULT_PORT:Int = 21;
 val DEFAULT_DATA_PORT:Set<Int> = (2020..2025).toSet()
 
 val anonymous = User("anonymous", null)
+val test = User("test", "test")
 
-var DEFAULT_USERS = mutableSetOf<User>(anonymous)
+var DEFAULT_USERS = mutableSetOf<User>(anonymous, test)
 
