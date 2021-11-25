@@ -13,10 +13,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.fdu.ftp_server.MainActivity
 import com.fdu.ftp_server.R
 import com.fdu.ftp_server.databinding.FragmentHomeBinding
-import com.fdu.ftp_server.server.Server
 import kotlinx.android.synthetic.main.fragment_home.*
 import kotlin.math.log
 

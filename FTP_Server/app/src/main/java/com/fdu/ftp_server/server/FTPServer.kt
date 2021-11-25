@@ -1,5 +1,12 @@
 package server
 
+import android.content.Context
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Message
+import androidx.annotation.RequiresApi
+import kotlinx.coroutines.internal.synchronized
 import server.enum.FileStruEnum
 import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
@@ -10,6 +17,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.io.path.Path
 
 /**
  * FTP server功能的类
@@ -18,11 +26,14 @@ import java.util.*
  * @param log
  * @param name
  */
+@RequiresApi(Build.VERSION_CODES.O)
 class FTPServer(
+    private val appContext: Context,
     private val controlSocket: Socket,//来自manger的socket
     private val dataPorts: Set<Int>,//允许打开的端口范围
-    private val log: PrintStream,//输出log的流
+    private val log: Handler?,//输出log的流
     private val name: String,//这个线程的名字，每个线程会启动一个server
+
 ) {
     //control socket的输入输出流包装，方便信息收发
     private val outControl = PrintWriter(controlSocket.getOutputStream(), true)
@@ -80,10 +91,15 @@ class FTPServer(
     /**
      * 向log输出流输出，日期+message
      */
+
     private fun printLog(message: String) {
         val date = dateFormat.format(Date())
-        synchronized(log) {
-            log.println("[$date] $message")
+        if (log != null) {
+                val msg = Message()
+                val b = Bundle()
+                b.putString("data","[$date] $message")
+                msg.data = b
+                log!!.sendMessage(msg)
         }
     }
 
@@ -91,15 +107,14 @@ class FTPServer(
      * rfc文档风格的log，记录输入的指令信息
      */
     private fun printLogIn(message: String) {
-        printLog("$name: $message-->")
+        printLog("client: $message-->")
     }
 
     /**
      * rfc文档风格的log，记录输出的信息
      */
     private fun printLogOut(message: String) {
-
-        printLog("<--$name: $message")
+        printLog("<--server: $message")
     }
 
     /**
@@ -206,8 +221,8 @@ class FTPServer(
             "USER" -> this::user
             "PASS" -> this::pass
             "TYPE" -> this::type
-//            "RETR" -> this::retr
-//            "STOR" -> this::stor
+            "RETR" -> this::retr
+            "STOR" -> this::stor
             "NOOP" -> this::noop
             "STRU" -> this::stru
             "PASV" -> this::pasv
@@ -321,10 +336,10 @@ class FTPServer(
     private fun pasvMsg(port: Int) {
         assert(port < UShort.MAX_VALUE.toInt())
 
-        val mod = UByte.MAX_VALUE.toInt()
-        val address = getAddress().address.joinToString()
+        val mod:Int = UByte.MAX_VALUE.toInt()+1
+        val address = getAddress().address
 
-        send(ENTERING_PASSIVE, "Entering passive mode (${address},${port % mod},${port % mod})")
+        send(ENTERING_PASSIVE, "Entering passive mode ${address[0]},${address[1]},${address[2]},${address[3]},${port / mod},${port % mod}")
     }
 
     private fun pasv(arg: String): Pair<Int, String>? {
@@ -357,7 +372,7 @@ class FTPServer(
 
             val address = Inet4Address.getByAddress(bytes.subList(0, 4).map(UByte::toByte).toByteArray())
             val port = bytes.subList(4, 6).map(UByte::toInt).reduce { i1, i2 ->
-                i1 * UByte.MAX_VALUE.toInt() + i2
+                i1 * 256 + i2
             }
 
             dataSocket = Socket(address, port)
@@ -371,6 +386,7 @@ class FTPServer(
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun sendFileAscii(path: Path, out: OutputStream) {
         PrintStream(out).use { printStream ->
             Files.lines(path, Charsets.US_ASCII).forEachOrdered { line ->
@@ -379,6 +395,7 @@ class FTPServer(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun sendFileBinary(path: Path, out: OutputStream) {
         out.use { writer ->
             Files.newInputStream(path).use { reader ->
@@ -387,6 +404,7 @@ class FTPServer(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun sendFile(path: Path, out: OutputStream, transferType: TransferTypeEnum) {
         when (transferType) {
             TransferTypeEnum.BINARY -> sendFileBinary(path, out)
@@ -394,20 +412,21 @@ class FTPServer(
         }
     }
 
-//    private fun retr(arg: String): Pair<Int, String> {
-//        val path = pathOf(arg)
-//        val dataSocket = dataSocket
-//
-//        return if (dataSocket != null) {
-//            sendFile(path, dataSocket.getOutputStream(), transferType)
-//            dataSocket.close()
-//
-//            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
-//        } else {
-//            Pair(NOT_CONNECTED, "The data connection is not established")
-//        }
-//    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun retr(arg: String): Pair<Int, String> {
+        val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
+        val dataSocket = dataSocket
+        return if (dataSocket != null) {
+            sendFile(Path(path), dataSocket.getOutputStream(), transferType)
+            dataSocket.close()
 
+            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
+        } else {
+            Pair(NOT_CONNECTED, "The data connection is not established")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun storeBinary(path: Path, input: InputStream) {
         input.use {
             Files.newOutputStream(path).use { out ->
@@ -416,6 +435,7 @@ class FTPServer(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun storeAscii(path: Path, input: InputStream) {
         PrintStream(Files.newOutputStream(path)).use { out ->
             Scanner(input).use { scanner ->
@@ -423,6 +443,7 @@ class FTPServer(
             }
         }
     }
+
 
     private fun store(path: Path, input: InputStream, transferType: TransferTypeEnum) {
         when (transferType) {
@@ -442,19 +463,19 @@ class FTPServer(
         }
         return transferred
     }
-//    private fun stor(arg: String): Pair<Int, String> {
-//        val path = DEFAULT_ROOT
-//        val dataSocket = dataSocket
-//
-//        return if (dataSocket != null) {
-//            try {
-//                store(path, dataSocket.getInputStream(), transferType)
-//                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
-//            } catch (e: IOException) {
-//                Pair(426, "An IO error occurred")
-//            }
-//        } else {
-//            Pair(NOT_CONNECTED, "Data connection not established")
-//        }
-//    }
+    private fun stor(arg: String): Pair<Int, String> {
+        val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
+        val dataSocket = dataSocket
+
+        return if (dataSocket != null) {
+            try {
+                store(Path(path), dataSocket.getInputStream(), transferType)
+                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
+            } catch (e: IOException) {
+                Pair(426, "An IO error occurred")
+            }
+        } else {
+            Pair(NOT_CONNECTED, "Data connection not established")
+        }
+    }
 }

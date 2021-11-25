@@ -6,7 +6,7 @@ plugins {
 
 android {
     compileSdk 31
-
+    buildToolsVersion "31"
     defaultConfig {
         applicationId "com.fdu.ftp_client"
         minSdk 24
@@ -24,15 +24,16 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_10
+        targetCompatibility JavaVersion.VERSION_1_10
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '10'
     }
     buildFeatures {
         viewBinding true
     }
+    compileSdkVersion 31
 }
 
 dependencies {
