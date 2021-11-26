@@ -491,6 +491,7 @@ class FTPServer(
     private fun stor(arg: String): Pair<Int, String> {
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
         val dataSocket = dataSocket
+        printLog(path)
         val file = File(path)
         if (file.exists()){
             file.delete()

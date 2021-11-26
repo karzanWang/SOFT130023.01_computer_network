@@ -333,6 +333,12 @@ class FTPClient(
         val path = (appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg.split(" ")[1])
         val dataSocket = dataSocket
 
+        var file = File(path)
+        if(!file.exists()){
+            printLog(path+" file not exists")
+            return
+        }
+
         return if (dataSocket != null) {
             sendFile(path, dataSocket.getOutputStream(), transferType)
             dataSocket.close()
@@ -391,6 +397,12 @@ class FTPClient(
 
     private fun retr(arg: String){
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg.split(" ")[1]
+        //printLog(path)
+        var file = File(path)
+        if(!file.exists()){
+            printLog(path+" file not exists")
+            return
+        }
         printLog(path)
         val dataSocket = dataSocket
 
