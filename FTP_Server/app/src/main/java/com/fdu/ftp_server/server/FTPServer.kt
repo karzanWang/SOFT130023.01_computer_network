@@ -387,25 +387,34 @@ class FTPServer(
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun sendFileAscii(path: Path, out: OutputStream) {
-        PrintStream(out).use { printStream ->
-            Files.lines(path, Charsets.US_ASCII).forEachOrdered { line ->
-                printStream.println(line)
-            }
+    private fun sendFileAscii(path: String, out: OutputStream) {
+//        PrintStream(out).use { printStream ->
+//            Files.lines(path, Charsets.US_ASCII).forEachOrdered { line ->
+//                printStream.println(line)
+//            }
+//        }
+
+        val outStream = PrintStream(out)
+        val file = File(path)
+        val a = Files.lines(file.toPath(), Charsets.US_ASCII)
+        a.forEachOrdered{
+            line -> outStream.println(line)
         }
+        a.close()
+        outStream.close()
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun sendFileBinary(path: Path, out: OutputStream) {
-        out.use { writer ->
-            Files.newInputStream(path).use { reader ->
-                transferTo(reader,writer)
-            }
-        }
+    private fun sendFileBinary(path: String, out: OutputStream) {
+        var file = File(path)
+        var a = Files.newInputStream(file.toPath())
+        transferTo(a, out)
+        a.close()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun sendFile(path: Path, out: OutputStream, transferType: TransferTypeEnum) {
+    private fun sendFile(path: String, out: OutputStream, transferType: TransferTypeEnum) {
         when (transferType) {
             TransferTypeEnum.BINARY -> sendFileBinary(path, out)
             TransferTypeEnum.ASCII -> sendFileAscii(path, out)
@@ -415,9 +424,13 @@ class FTPServer(
     @RequiresApi(Build.VERSION_CODES.O)
     private fun retr(arg: String): Pair<Int, String> {
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
+        val file = File(path)
+        if (!file.exists()){
+            return Pair(553, "File name not allowed")
+        }
         val dataSocket = dataSocket
         return if (dataSocket != null) {
-            sendFile(Path(path), dataSocket.getOutputStream(), transferType)
+            sendFile((path), dataSocket.getOutputStream(), transferType)
             dataSocket.close()
 
             Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
@@ -427,25 +440,37 @@ class FTPServer(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun storeBinary(path: Path, input: InputStream) {
-        input.use {
-            Files.newOutputStream(path).use { out ->
-                transferTo(input,out)
-            }
-        }
+    private fun storeBinary(path: String, input: InputStream) {
+//        input.use {
+//            Files.newOutputStream(path).use { out ->
+//                transferTo(input,out)
+//            }
+//        }
+        var file = File(path)
+        var a = Files.newOutputStream(file.toPath())
+        transferTo(input, a)
+        a.close()
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun storeAscii(path: Path, input: InputStream) {
-        PrintStream(Files.newOutputStream(path)).use { out ->
-            Scanner(input).use { scanner ->
-                scanner.forEachRemaining(out::println)
-            }
-        }
+    private fun storeAscii(path: String, input: InputStream) {
+//        PrintStream(Files.newOutputStream(path)).use { out ->
+//            Scanner(input).use { scanner ->
+//                scanner.forEachRemaining(out::println)
+//            }
+//        }
+
+        var file = File(path)
+        var a = PrintStream(Files.newOutputStream(file.toPath()))
+        var b = Scanner(input)
+        b.forEachRemaining(a::println)
+        b.close()
+        a.close()
     }
 
 
-    private fun store(path: Path, input: InputStream, transferType: TransferTypeEnum) {
+    private fun store(path: String, input: InputStream, transferType: TransferTypeEnum) {
         when (transferType) {
             TransferTypeEnum.BINARY -> storeBinary(path, input)
             TransferTypeEnum.ASCII -> storeAscii(path, input)
@@ -466,10 +491,15 @@ class FTPServer(
     private fun stor(arg: String): Pair<Int, String> {
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
         val dataSocket = dataSocket
+        val file = File(path)
+        if (file.exists()){
+            file.delete()
+        }
+        file.createNewFile()
         printLog(path)
         return if (dataSocket != null) {
             try {
-                store(Path(path), dataSocket.getInputStream(), transferType)
+                store((path), dataSocket.getInputStream(), transferType)
                 Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
             } catch (e: IOException) {
                 Pair(426, "An IO error occurred")

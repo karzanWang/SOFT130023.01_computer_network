@@ -31,8 +31,8 @@
 
     <EditText
         android:id="@+id/home_edittext_ip"
-        android:layout_width="290dp"
-        android:layout_height="56dp"
+        android:layout_width="214dp"
+        android:layout_height="55dp"
         android:layout_marginTop="44dp"
         android:hint="请输入ftp地址"
         app:layout_constraintBottom_toTopOf="@+id/home_edittext_message"
@@ -47,7 +47,7 @@
         android:layout_width="89dp"
         android:layout_height="46dp"
         android:layout_marginTop="44dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="16dp"
         android:text="连接"
         app:layout_constraintBottom_toTopOf="@+id/home_bt_communicate"
         app:layout_constraintEnd_toEndOf="parent"
@@ -57,8 +57,8 @@
 
     <EditText
         android:id="@+id/home_edittext_message"
-        android:layout_width="288dp"
-        android:layout_height="63dp"
+        android:layout_width="229dp"
+        android:layout_height="59dp"
         android:layout_marginEnd="6dp"
         android:layout_marginBottom="36dp"
         android:hint="请输入发送信息"
@@ -95,9 +95,9 @@
 
     <TextView
         android:id="@+id/home_tv_reply"
-        android:layout_width="405dp"
-        android:layout_height="380dp"
-        android:layout_marginBottom="96dp"
+        android:layout_width="335dp"
+        android:layout_height="369dp"
+        android:layout_marginBottom="110dp"
         android:text=""
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
