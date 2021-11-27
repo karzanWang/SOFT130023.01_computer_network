@@ -39,8 +39,6 @@ class FTPClient(
     val DELIMITER = "\n" //分隔符
     private val dateFormat = SimpleDateFormat("hh:mm:ss dd/MM/yy")//输出log的格式
 
-    private var user: User? = null
-    private var authenticated = false
 
     private var dataSocket: Socket? = null
     private var transferType = TransferTypeEnum.BINARY
@@ -111,11 +109,15 @@ class FTPClient(
 
 
     public fun sendFunc(message: String){
-        if(dispatchSend(message)){
-            send(message)
-        }
+//        if(dispatchSend(message)){
+//            send(message)
+//        }
         if(message.split(" ")[0].uppercase().trim()=="RETR"){
+            send(message)
             retr(message)
+        }else{
+            send(message)
+            dispatchSend(message)
         }
     }
     /**
@@ -399,10 +401,14 @@ class FTPClient(
         val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg.split(" ")[1]
         //printLog(path)
         var file = File(path)
-        if(!file.exists()){
-            printLog(path+" file not exists")
-            return
+//        if(!file.exists()){
+//            printLog(path+" file not exists")
+//            return
+//        }
+        if (file.exists()){
+            file.delete()
         }
+        file.createNewFile()
         printLog(path)
         val dataSocket = dataSocket
 

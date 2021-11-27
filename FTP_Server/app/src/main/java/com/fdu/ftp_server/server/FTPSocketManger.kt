@@ -20,7 +20,7 @@ class FTPSocketManger(
     port: Int = DEFAULT_PORT,
     private val dataPorts: Set<Int> = DEFAULT_DATA_PORT,
     nThread: Int = 5,
-    private val timeout: Int = 50000,
+    private val timeout: Int = 5000000,
 ) {
     private val handler = h
     private val serverSocket = ServerSocket(port)

@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        home_edittext_ip?.setText("192.168.43.1")
+        home_edittext_ip?.setText("127.0.0.1")
         home_bt_connect?.setOnClickListener(View.OnClickListener { v: View? ->
             Thread{
                 client = FTPSocketManger(applicationContext,handler,home_edittext_ip?.text.toString())

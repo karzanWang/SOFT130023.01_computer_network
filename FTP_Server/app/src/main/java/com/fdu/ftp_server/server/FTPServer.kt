@@ -95,11 +95,11 @@ class FTPServer(
     private fun printLog(message: String) {
         val date = dateFormat.format(Date())
         if (log != null) {
-                val msg = Message()
-                val b = Bundle()
-                b.putString("data","[$date] $message")
-                msg.data = b
-                log!!.sendMessage(msg)
+            val msg = Message()
+            val b = Bundle()
+            b.putString("data", "[$date] $message")
+            msg.data = b
+            log!!.sendMessage(msg)
         }
     }
 
@@ -175,7 +175,10 @@ class FTPServer(
         }.contains(true)
 
         if (!ok) {
-            throw FTPException(ERROR_ARGS, "This command requires ${argc.joinToString(", ")} argument(s)")
+            throw FTPException(
+                ERROR_ARGS,
+                "This command requires ${argc.joinToString(", ")} argument(s)"
+            )
         }
     }
 
@@ -217,20 +220,32 @@ class FTPServer(
     }
 
     private fun dispatch(cmd: String): (String) -> Pair<Int, String>? {
-        return when (cmd.uppercase()) {
-            "USER" -> this::user
-            "PASS" -> this::pass
-            "TYPE" -> this::type
-            "RETR" -> this::retr
-            "STOR" -> this::stor
-            "NOOP" -> this::noop
-            "STRU" -> this::stru
-            "PASV" -> this::pasv
-            "MODE" -> this::mode
-            "PORT" -> this::port
-            "QUIT" -> this::quit
+        if (!authenticated) {
+            return when (cmd.uppercase()) {
+                "USER" -> this::user
+                "PASS" -> this::pass
+                "NOOP" -> this::noop
 
-            else -> this::noCommand
+                "QUIT" -> this::quit
+
+                else -> this::noCommand
+            }
+        } else {
+            return when (cmd.uppercase()) {
+                "USER" -> this::user
+                "PASS" -> this::pass
+                "TYPE" -> this::type
+                "RETR" -> this::retr
+                "STOR" -> this::stor
+                "NOOP" -> this::noop
+                "STRU" -> this::stru
+                "PASV" -> this::pasv
+                "MODE" -> this::mode
+                "PORT" -> this::port
+                "QUIT" -> this::quit
+
+                else -> this::noCommand
+            }
         }
     }
 
@@ -336,10 +351,13 @@ class FTPServer(
     private fun pasvMsg(port: Int) {
         assert(port < UShort.MAX_VALUE.toInt())
 
-        val mod:Int = UByte.MAX_VALUE.toInt()+1
+        val mod: Int = UByte.MAX_VALUE.toInt() + 1
         val address = getAddress().address
 
-        send(ENTERING_PASSIVE, "Entering passive mode ${address[0]},${address[1]},${address[2]},${address[3]},${port / mod},${port % mod}")
+        send(
+            ENTERING_PASSIVE,
+            "Entering passive mode ${address[0]},${address[1]},${address[2]},${address[3]},${port / mod},${port % mod}"
+        )
     }
 
     private fun pasv(arg: String): Pair<Int, String>? {
@@ -370,7 +388,8 @@ class FTPServer(
             if (bytes.size != 6)
                 return Pair(ERROR_ARGS, "Ill formed address")
 
-            val address = Inet4Address.getByAddress(bytes.subList(0, 4).map(UByte::toByte).toByteArray())
+            val address =
+                Inet4Address.getByAddress(bytes.subList(0, 4).map(UByte::toByte).toByteArray())
             val port = bytes.subList(4, 6).map(UByte::toInt).reduce { i1, i2 ->
                 i1 * 256 + i2
             }
@@ -397,8 +416,8 @@ class FTPServer(
         val outStream = PrintStream(out)
         val file = File(path)
         val a = Files.lines(file.toPath(), Charsets.US_ASCII)
-        a.forEachOrdered{
-            line -> outStream.println(line)
+        a.forEachOrdered { line ->
+            outStream.println(line)
         }
         a.close()
         outStream.close()
@@ -423,9 +442,9 @@ class FTPServer(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun retr(arg: String): Pair<Int, String> {
-        val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
+        val path = appContext.getExternalFilesDir("")!!.absolutePath + "/" + arg
         val file = File(path)
-        if (!file.exists()){
+        if (!file.exists()) {
             return Pair(553, "File name not allowed")
         }
         val dataSocket = dataSocket
@@ -476,8 +495,9 @@ class FTPServer(
             TransferTypeEnum.ASCII -> storeAscii(path, input)
         }
     }
+
     @Throws(IOException::class)
-    fun transferTo(input:InputStream,out: OutputStream): Long {
+    fun transferTo(input: InputStream, out: OutputStream): Long {
         Objects.requireNonNull(out, "out")
         var transferred = 0L
         var read: Int
@@ -488,12 +508,13 @@ class FTPServer(
         }
         return transferred
     }
+
     private fun stor(arg: String): Pair<Int, String> {
-        val path = appContext.getExternalFilesDir("")!!.absolutePath+"/"+arg
+        val path = appContext.getExternalFilesDir("")!!.absolutePath + "/" + arg
         val dataSocket = dataSocket
         printLog(path)
         val file = File(path)
-        if (file.exists()){
+        if (file.exists()) {
             file.delete()
         }
         file.createNewFile()
