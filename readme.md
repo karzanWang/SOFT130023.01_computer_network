@@ -53,7 +53,30 @@ val response = command(args)
 
 为了方便log的清楚记录（尤其是server比较难调试），还模仿了rfc文档里边的演示风格封装了用来log的函数，后台输出方便查看问题，后来为了方便直接输出到文件，在ftp功能实现类的参数当中加入了PrintStream类的参数，用来制定log的输出。可以是system.out，也可以是文件，甚至可以是socket。
 
-为了方便调试，直接使用python的socket去发送消息来看log，这边log的时间好像有点问题，但是影响不大
+考虑具体的功能实现，文件传输的部分会放到文件传输策略当中。
+
+首先是鉴权，在登录的时候核验账户身份，首先配对用户名，如果是匿名用户直接完成登陆，如果是正确的名字则发送消息和reply code让client发送密码，然后验证。
+
+MODE和STRU仅做返回消息处理，对实际程序逻辑没有影响。
+
+TYPE的参数会作为传输文件是的transferType，使用枚举类去和用户传过来的code配对（MODE和 STRU的参数配对也是这样子的），会设置类当中的transferType，文件传输的时候会根据这个type来选择传输方式。
+
+服务器端收到PASV之后会尝试打开端口，如果成功打开，会把相关信息返回给client，然后accept()进入阻塞等待连接，然后完成data 连接。
+
+服务器收到port指令的时候会解析出ip地址和端口，然后建立socket连接，成功将返回成功信息，失败则根据错误类型返回（例如地址格式错误，连接建立错误）
+
+### client端设计思路
+
+client端主要对应server端的各种功能进行封装实现。除与server端重合的log功能、建立连接等功能外，主要需要对各类指令情况进行处理。
+
+首先，client端需要对待发送的指令进行处理，这一功能在dispatchSend函数中实现。具体地，在PORT指令中，仅当本地成功开启端口，才会向服务端发送PORT指令；而在STOR指令中，也仅当本地成功找到指定文件，才会向服务端申请STOR指令。指令在本地都已处理成功后，dispatchSend会返回true，此时才进行与服务端在Socket上的通信，反之则直接返回错误信息。
+
+其次，client端也需对server发回的信息进行监听。本次project中需要监听并执行的指令为client端发送PORT指令后服务端返回的内容。因此client也拥有类似于server的监听函数。
+
+最后，client端需处理需先发送指令再处理的指令，即RETR指令。在此指令的处理中，需未等成功传送文件就先向服务器发送请求（因为需要发送请求让服务器接收文件）。
+
+### 调试方案
+最开始server是单独的一个程序（独立于安卓项目），为了方便调试，直接使用python的socket去发送消息来看log。
 
 ```python
 import socket
@@ -115,27 +138,28 @@ a.close()
 [09:04:03 25/11/21] <--connect1: 221 See ya.
 ```
 
-剩下的只需要考虑具体的功能实现了。文件传输的部分会放到文件传输策略当中。
-
-首先是鉴权，在登录的时候核验账户身份，首先配对用户名，如果是匿名用户直接完成登陆，如果是正确的名字则发送消息和reply code让client发送密码，然后验证。
-
-MODE和STRU仅做返回消息处理，对实际程序逻辑没有影响。
-
-TYPE的参数会作为传输文件是的transferType，使用枚举类去和用户传过来的code配对（MODE和 STRU的参数配对也是这样子的），会设置类当中的transferType，文件传输的时候会根据这个type来选择传输方式。
-
-服务器端收到PASV之后会尝试打开端口，如果成功打开，会把相关信息返回给client，然后accept()进入阻塞等待连接，然后完成data 连接。
-
-服务器收到port指令的时候会解析出ip地址和端口，然后建立socket连接，成功将返回成功信息，失败则根据错误类型返回（例如地址格式错误，连接建立错误）
-
-### client端设计思路
-
-client端主要对应server端的各种功能进行封装实现。除与server端重合的log功能、建立连接等功能外，主要需要对各类指令情况进行处理。
-
-首先，client端需要对待发送的指令进行处理，这一功能在dispatchSend函数中实现。具体地，在PORT指令中，仅当本地成功开启端口，才会向服务端发送PORT指令；而在STOR指令中，也仅当本地成功找到指定文件，才会向服务端申请STOR指令。指令在本地都已处理成功后，dispatchSend会返回true，此时才进行与服务端在Socket上的通信，反之则直接返回错误信息。
-
-其次，client端也需对server发回的信息进行监听。本次project中需要监听并执行的指令为client端发送PORT指令后服务端返回的内容。因此client也拥有类似于server的监听函数。
-
-最后，client端需处理需先发送指令再处理的指令，即RETR指令。在此指令的处理中，需未等成功传送文件就先向服务器发送请求（因为需要发送请求再传送文件）。
+但是后期移植安卓平台上的时候由于设备问题（macbook），无法方便的连接手机，而且在手机上运行程序无法很好的调试，所以还是选择下功夫使用模拟器调试，需要一些步骤，首先模拟器的target需要选择google apis版本的系统，然后需要配置好adb调试，通过adb shell连接到qemu模拟器的shell，去修改data文件夹的全选，方便做文件的操作（把测试文件放到模拟器中），之后就可以打开client和server的安卓项目同时开启debug来调试了，比起在两台手机上方便许多。
 
 ### 文件传输策略
 
+我们的策略其实是比较简陋的，所以没有在视屏当中演示，对于小文件而言没有明显的差别，对于大文件（500mb）而言如果使用旧的传输方案可能需要数分钟。
+
+主要的传输函数如下，当中包含了一些md5的计算，简单来说就是在两个流之间建立一个buffer，进行流和流之间的数据传输，没有特殊的地方。
+
+```kotlin
+fun transferTo(input: InputStream, out: OutputStream): Long {
+        Objects.requireNonNull(out, "out")
+        messageDigest.reset()
+        var transferred = 0L
+        var read: Int
+        val buffer = ByteArray(8192)
+        while (input.read(buffer, 0, 8192).also { read = it } >= 0) {
+            out.write(buffer, 0, read)
+            messageDigest.update(buffer, 0, read);
+            transferred += read.toLong()
+        }
+        return transferred
+    }
+```
+
+旧的传输方案之所以会达到几分钟，主要原因在于client最初的处理方式存在问题，client一开始的逻辑是先把整个文件的数据从文件流读到socket输出流上面，然后向server发送stor指令，让server开始接收，这在小文件的时候是完全可行的，但是500m的文件上就会出现问题，500m的数据在socket的输出上的时候会卡死，优化的方案是先向server发送指令，之后在开始读取文件到socket上，同时server那边同步接收。其实这个问题我个人觉得是个bug，不太能够称之为优化
