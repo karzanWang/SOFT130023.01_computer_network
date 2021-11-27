@@ -1,6 +1,8 @@
 # 计算机网络 Project1
 组员：王海伟 许同樵
 
+## score：两人均分
+
 ###  gui实现
 
 在考虑gui的设计的时候，起初为了保证后期可能的需求和功能扩展，考虑了可扩展性，需要类似于菜单选择界面的功能，所以选择了android studio的navigation drawer activity作为模版，它提供了navigation作为菜单选择切换界面，但是提供的模版当中涉及到了Fragment和ViewModule，涉及到安卓开发的知识，出于项目重点的考虑，我们仅使用模版作为界面，不会深入的使用相关特性，仅做修改需要的学习。
