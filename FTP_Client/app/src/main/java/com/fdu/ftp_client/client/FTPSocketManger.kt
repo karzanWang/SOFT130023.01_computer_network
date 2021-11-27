@@ -18,23 +18,35 @@ class FTPSocketManger(
     server_ip: String,
     port: Int = DEFAULT_PORT,
     private val dataPorts: Set<Int> = DEFAULT_DATA_PORT,
-    private val timeout: Int = 50000,
+    private val timeout: Int = 5000000,
 ) {
     private val clientSocket = Socket(server_ip, port)
-    private var count = 1
+    private var count = 0
     private val handler = h;
-    private var client:FTPClient? = null
+    public var client:FTPClient? = null
+    private val pool = Executors.newFixedThreadPool(1)
 
     fun create() {
         val socket = clientSocket
         socket.soTimeout = timeout
 
+        while (count == 1){
+        }
+
         val order = count++ //Fetch and increment
-        client = FTPClient(appContext,socket, dataPorts, handler, "client$order")
-        client!!.listenForever()
+        pool.execute {
+            client = FTPClient(appContext,socket, dataPorts, handler, "client$order")
+            client!!.listenForever()
+            client = null
+            count = 0
+        }
     }
-    fun send(msg:String){
-        client!!.sendFunc(msg)
+//    fun send(msg:String){
+//        client!!.sendFunc(msg)
+//    }
+
+    fun listenForever() {
+        while (true) create()
     }
 
     /**

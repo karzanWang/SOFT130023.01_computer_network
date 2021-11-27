@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         home_bt_startServer?.setOnClickListener(View.OnClickListener { v: View? ->
             Log.d("home_bt_startServer", "home_bt_startServer clicked")
-            Thread {    FTPSocketManger(applicationContext,handler_Server).listen() }
+            Thread {    FTPSocketManger(applicationContext,handler_Server).listenForever() }
                 .start()
             Toast.makeText(this, "服务已启动", Toast.LENGTH_SHORT).show()
 

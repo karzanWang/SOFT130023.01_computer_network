@@ -12,7 +12,23 @@
     <string name="menu_file">File</string>
     <string name="menu_about">About</string>
 
-    <string name="about_version_string">Client Version : 0.1</string>
+    <string name="about_version_string">Client Version : 1。0</string>
     <string name="about_author_string">作者：许同樵 王海伟</string>
     <string name="about_info_string">复旦大学 计算机网络 SOFT130023.01</string>
+
+
+    <string-array name="planets_array">
+        <item>USER</item>
+        <item>PASS</item>
+        <item>TYPE</item>
+        <item>RETR</item>
+        <item>STOR</item>
+        <item>STRU</item>
+        <item>PASV</item>
+        <item>NOOP</item>
+        <item>MODE</item>
+        <item>PORT</item>
+        <item>QUIT</item>
+    </string-array>
+
 </resources>

@@ -12,9 +12,11 @@ import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
 import java.io.*
+import java.math.BigInteger
 import java.net.*
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.io.path.Path
@@ -46,6 +48,7 @@ class FTPServer(
 
     private var dataSocket: Socket? = null
     private var transferType = TransferTypeEnum.BINARY
+    var messageDigest = MessageDigest.getInstance("MD5")
 
 
     init {
@@ -208,10 +211,10 @@ class FTPServer(
             inControl.forEachRemaining {
                 listenRequest((it))
             }
-
-            throw inControl.ioException()
         } catch (quit: QuitEvent) {
             send(DISCONNECTION, "See ya.")
+            destory()
+            return
         } catch (e: SocketTimeoutException) {
             send(TIMEOUT, "Connection timed out.")
         } catch (e: IOException) {
@@ -228,7 +231,7 @@ class FTPServer(
 
                 "QUIT" -> this::quit
 
-                else -> this::noCommand
+                else -> this::notLogin
             }
         } else {
             return when (cmd.uppercase()) {
@@ -251,6 +254,10 @@ class FTPServer(
 
     private fun noCommand(arg: String): Pair<Int, String> {
         return Pair(COMMAND_NOT_IMPLEMENTED, "Command not implemented.")
+    }
+
+    private fun notLogin(arg: String): Pair<Int, String> {
+        return Pair(530, "Not logged in.")
     }
 
     private fun quit(arg: String): Nothing {
@@ -451,8 +458,13 @@ class FTPServer(
         return if (dataSocket != null) {
             sendFile((path), dataSocket.getOutputStream(), transferType)
             dataSocket.close()
+            var bigInt:BigInteger = BigInteger(1, messageDigest.digest());
+            var md5:String = bigInt.toString(16);
+            while (md5.length < 32) {
+                md5 = "0$md5";
+            }
 
-            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection")
+            Pair(CLOSING_DATA_CONNECTION, "Transfer complete, closing data connection md5:$md5")
         } else {
             Pair(NOT_CONNECTED, "The data connection is not established")
         }
@@ -499,11 +511,13 @@ class FTPServer(
     @Throws(IOException::class)
     fun transferTo(input: InputStream, out: OutputStream): Long {
         Objects.requireNonNull(out, "out")
+        messageDigest.reset()
         var transferred = 0L
         var read: Int
         val buffer = ByteArray(8192)
         while (input.read(buffer, 0, 8192).also { read = it } >= 0) {
             out.write(buffer, 0, read)
+            messageDigest.update(buffer, 0, read);
             transferred += read.toLong()
         }
         return transferred
@@ -522,7 +536,12 @@ class FTPServer(
         return if (dataSocket != null) {
             try {
                 store((path), dataSocket.getInputStream(), transferType)
-                Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
+                var bigInt:BigInteger = BigInteger(1, messageDigest.digest());
+                var md5:String = bigInt.toString(16);
+                while (md5.length < 32) {
+                    md5 = "0$md5";
+                }
+                Pair(CLOSING_DATA_CONNECTION, "Transfer complete md5:$md5")
             } catch (e: IOException) {
                 Pair(426, "An IO error occurred")
             }
