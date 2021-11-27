@@ -38,8 +38,11 @@ class FTPSocketManger(
 
         val order = count++ //Fetch and increment
 
+        var server:FTPServer
         pool.execute {
-            FTPServer(appContext,socket, dataPorts, handler, "server$order").listenForever()
+            server = FTPServer(appContext,socket, dataPorts, handler, "server$order")
+            server.listenForever()
+            server.destory()
         }
     }
 

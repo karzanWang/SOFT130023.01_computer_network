@@ -12,6 +12,7 @@ import server.enum.TransferModeEnum
 import server.enum.TransferTypeEnum
 import server.exception.FTPException
 import java.io.*
+import java.lang.Thread.sleep
 import java.math.BigInteger
 import java.net.*
 import java.nio.file.Files
@@ -78,10 +79,10 @@ class FTPServer(
     }
 
     private fun closeData() {
-        val dataSocket = dataSocket
+        //val dataSocket = dataSocket
 
-        if (dataSocket != null && !dataSocket.isClosed)
-            dataSocket.close()
+        if (dataSocket != null && !dataSocket!!.isClosed)
+            this.dataSocket!!.close()
     }
 
     fun destory() {
@@ -388,6 +389,7 @@ class FTPServer(
 
         val delimiter = ','
         val addressStr = args[0]
+        closeData()
 
         return try {
             val bytes = addressStr.split(delimiter).map(String::toUByte)
@@ -401,12 +403,15 @@ class FTPServer(
                 i1 * 256 + i2
             }
 
+            sleep(1000)
+
             dataSocket = Socket(address, port)
 
             Pair(COMMAND_OK, "Connected to $address:$port")
         } catch (e: NumberFormatException) {
             Pair(ERROR_ARGS, "Ill formed address")
         } catch (e: IOException) {
+            println(e.message)
             Pair(ERROR_ARGS, "Failed to connect")
         }
     }
@@ -454,10 +459,11 @@ class FTPServer(
         if (!file.exists()) {
             return Pair(553, "File name not allowed")
         }
-        val dataSocket = dataSocket
+        //var dataSocket = dataSocket
         return if (dataSocket != null) {
-            sendFile((path), dataSocket.getOutputStream(), transferType)
-            dataSocket.close()
+            sendFile((path), this.dataSocket!!.getOutputStream(), transferType)
+            this.dataSocket!!.close()
+            dataSocket = null
             var bigInt:BigInteger = BigInteger(1, messageDigest.digest());
             var md5:String = bigInt.toString(16);
             while (md5.length < 32) {
@@ -525,7 +531,7 @@ class FTPServer(
 
     private fun stor(arg: String): Pair<Int, String> {
         val path = appContext.getExternalFilesDir("")!!.absolutePath + "/" + arg
-        val dataSocket = dataSocket
+        //var dataSocket = dataSocket
         printLog(path)
         val file = File(path)
         if (file.exists()) {
@@ -535,7 +541,9 @@ class FTPServer(
         printLog(path)
         return if (dataSocket != null) {
             try {
-                store((path), dataSocket.getInputStream(), transferType)
+                store((path), this.dataSocket!!.getInputStream(), transferType)
+                this.dataSocket!!.close()
+                dataSocket = null
                 var bigInt:BigInteger = BigInteger(1, messageDigest.digest());
                 var md5:String = bigInt.toString(16);
                 while (md5.length < 32) {

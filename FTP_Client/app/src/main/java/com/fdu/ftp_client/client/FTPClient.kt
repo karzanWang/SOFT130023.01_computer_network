@@ -49,34 +49,30 @@ class FTPClient(
     var startTime: Long? = null
     var endTime: Long? = null
 
-    var quit:Int = 0
+    var quit: Int = 0
 
     init {
         inControl.useDelimiter(DELIMITER);
     }
 
-//    private fun tryOpenData(port: Int): Socket? {
-//        try {
-//
-//        } catch (e: BindException) {
-//            return null
-//        }
-//    }
 
-//    private fun openData(it:Int): Socket? {
-//        return try {
-//                tryOpenData(it)
-//        } catch (e: NoSuchElementException) {
-//            null
-//        }
-//    }
+    private fun openData(port: Int): Socket? {
+        return try {
+            ServerSocket(port).use {
+                it.soTimeout = 0
+                return it.accept()
+            }
+        } catch (e: NoSuchElementException) {
+            null
+        }
+    }
 
 
     private fun closeData() {
-        val dataSocket = dataSocket
+        //val dataSocket = dataSocket
 
-        if (dataSocket != null && !dataSocket.isClosed)
-            dataSocket.close()
+        if (dataSocket != null && !dataSocket!!.isClosed)
+            dataSocket!!.close()
     }
 
     fun destory() {
@@ -123,6 +119,9 @@ class FTPClient(
         if (message.split(" ")[0].uppercase().trim() == "RETR") {
             send(message)
             retr(message)
+        }else if(message.split(" ")[0].uppercase().trim() == "PORT"){
+            send(message)
+            dispatchSend(message)
         } else {
             send(message)
             dispatchSend(message)
@@ -216,7 +215,7 @@ class FTPClient(
     fun listenForever() {
         inControl.forEachRemaining {
             listenRequest((it))
-            if(quit == 1){
+            if (quit == 1) {
                 return@forEachRemaining
             }
         }
@@ -236,7 +235,7 @@ class FTPClient(
             }
             return true
         } catch (e: Exception) {
-            printLog(e.message.toString())
+            //printLog(e.message.toString())
             return false
         }
     }
@@ -289,15 +288,24 @@ class FTPClient(
         val delimiter = ','
         closeData()
         val bytes = args[1].split(delimiter).map(String::toUByte)
-        Thread {
-            this.dataSocket =
-                ServerSocket((bytes[bytes.size - 2].toInt() * 256 + bytes[bytes.size - 1].toInt())).accept()
-            printLog("Client open port success!")
-        }.start()
+
+//        Thread {
+//            this.dataSocket =
+//                ServerSocket((bytes[bytes.size - 2].toInt() * 256 + bytes[bytes.size - 1].toInt())).accept()
+//            printLog("Client open port success!")
+//        }.start()
+        val dataSocket = openData((bytes[bytes.size - 2].toInt() * 256 + bytes[bytes.size - 1].toInt()))
+        if (dataSocket != null) {
+            this.dataSocket = dataSocket
+        } else {
+            printLog("Unable to open a data port for connection")
+        }
+
     }
 
     private fun pasvn(arg: String): String {
         val args = split(arg)
+        closeData()
         try {
             var bytes = args[3].split(",")
             val address = Inet4Address.getByAddress(
@@ -354,7 +362,7 @@ class FTPClient(
 
         printLog(appContext.getExternalFilesDir("")!!.absolutePath + "/" + arg.split(" ")[1]);
         val path = (appContext.getExternalFilesDir("")!!.absolutePath + "/" + arg.split(" ")[1])
-        val dataSocket = dataSocket
+        //val dataSocket = dataSocket
 
         var file = File(path)
         if (!file.exists()) {
@@ -364,15 +372,15 @@ class FTPClient(
 
         return if (dataSocket != null) {
             startTime = System.currentTimeMillis()
-            sendFile(path, dataSocket.getOutputStream(), transferType)
+            sendFile(path, dataSocket!!.getOutputStream(), transferType)
             endTime = System.currentTimeMillis()
             var bigInt: BigInteger = BigInteger(1, messageDigest.digest());
-            var md5:String = bigInt.toString(16);
+            var md5: String = bigInt.toString(16);
             while (md5.length < 32) {
                 md5 = "0$md5";
             }
-            printLog("传输时间为：" + ((endTime!! - startTime!!)/1000) + "s.md5:$md5")
-            dataSocket.close()
+            printLog("传输时间为：" + ((endTime!! - startTime!!)) + "ms. md5:$md5")
+            dataSocket!!.close()
         } else {
         }
     }
@@ -441,19 +449,20 @@ class FTPClient(
         }
         file.createNewFile()
         printLog(path)
-        val dataSocket = dataSocket
+        //val dataSocket = dataSocket
 
         if (dataSocket != null) {
             try {
                 startTime = System.currentTimeMillis()
-                store((path), dataSocket.getInputStream(), transferType)
+                store((path), dataSocket!!.getInputStream(), transferType)
                 endTime = System.currentTimeMillis()
+                dataSocket!!.close()
                 var bigInt: BigInteger = BigInteger(1, messageDigest.digest());
-                var md5:String = bigInt.toString(16);
+                var md5: String = bigInt.toString(16);
                 while (md5.length < 32) {
                     md5 = "0$md5";
                 }
-                printLog("传输时间为：" + ((endTime!! - startTime!!)/1000) + "s.md5:$md5")
+                printLog("传输时间为：" + ((endTime!! - startTime!!)) + "ms. md5:$md5")
                 Pair(CLOSING_DATA_CONNECTION, "Transfer complete")
             } catch (e: IOException) {
                 printLog(e.message.toString())

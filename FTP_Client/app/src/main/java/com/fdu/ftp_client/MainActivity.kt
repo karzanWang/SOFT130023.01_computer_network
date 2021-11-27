@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             Thread {
                 client =
                     FTPSocketManger(applicationContext, handler, home_edittext_ip?.text.toString())
-                client!!.listenForever()
+                client!!.create()
             }.start()
 //            home_edittext_ip?.isEnabled = false
 //            home_bt_connect?.isEnabled = false
@@ -106,9 +106,10 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
                 var i = 0
                 while (i < 10){
                     client!!.client?.sendFunc("PORT 127,0,0,1,40,1")
+                    //client!!.client?.sendFunc("PASV")
                     sleep(500)
                     client!!.client?.sendFunc("STOR small000$i")
-                    sleep(2000)
+                    sleep(1000)
                     i++
                 }
             }.start()
@@ -121,7 +122,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
                     client!!.client?.sendFunc("PASV")
                     sleep(500)
                     client!!.client?.sendFunc("STOR small99$i")
-                    sleep(2000)
+                    sleep(1000)
                     i++
                 }
             }.start()
@@ -134,7 +135,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
                     client!!.client?.sendFunc("PASV")
                     sleep(500)
                     client!!.client?.sendFunc("RETR small99$i")
-                    sleep(2000)
+                    sleep(1000)
                     i++
                 }
             }.start()
