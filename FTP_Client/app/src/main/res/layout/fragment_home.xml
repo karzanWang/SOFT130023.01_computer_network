@@ -76,6 +76,15 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/home_bt_small2" />
+    <Button
+        android:id="@+id/compare"
+        android:layout_width="312dp"
+        android:layout_height="38dp"
+        android:text="优化比较"
+        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/home_bt_small1" />
 
     <Button
         android:id="@+id/home_bt_connect"

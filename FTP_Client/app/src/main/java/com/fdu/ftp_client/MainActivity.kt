@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.text.method.ScrollingMovementMethod
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
@@ -27,6 +28,7 @@ import client.FTPSocketManger
 import com.fdu.ftp_client.databinding.ActivityMainBinding
 import kotlinx.android.synthetic.main.fragment_home.*
 import kotlinx.coroutines.delay
+import java.io.File
 import java.lang.Thread.sleep
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -100,7 +102,51 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
                 client!!.client?.sendFunc(cmd + " " + home_edittext_message?.getText().toString())
             }.start()
         })
-
+        compare?.setOnClickListener {
+            Thread {
+                client!!.client?.sendFunc("PASV")
+                sleep(500)
+                client!!.client?.sendFunc("STOR compare")
+                sleep(1000)
+                client!!.client?.sendFunc("PASV")
+                sleep(500)
+                client!!.client?.sendFunc("RETR compare")
+                sleep(1000)
+                val z = ZipUtil()
+                var l = ArrayList<File>()
+                l.add(File(applicationContext.getExternalFilesDir("")!!.absolutePath + "/compare"));
+                var startTime = System.currentTimeMillis()
+                z.zip(
+                    l,
+                    applicationContext.getExternalFilesDir("")!!.absolutePath + "/compare_zipped"
+                )
+                var endTime = System.currentTimeMillis()
+                val msg = Message()
+                val b = Bundle()
+                b.putString("data", "压缩时间："+(endTime-startTime)+"ms")
+                msg.data = b
+                handler?.sendMessage(msg)
+                client!!.client?.sendFunc("PASV")
+                sleep(500)
+                client!!.client?.sendFunc("STOR compare_zipped")
+                sleep(1000)
+                client!!.client?.sendFunc("PASV")
+                sleep(500)
+                client!!.client?.sendFunc("RETR compare_zipped")
+                sleep(1000)
+                startTime = System.currentTimeMillis()
+                z.unzip(
+                    applicationContext.getExternalFilesDir("")!!.absolutePath + "/compare_zipped",
+                    applicationContext.getExternalFilesDir("")!!.absolutePath
+                )
+                endTime = System.currentTimeMillis()
+                val msg2 = Message()
+                val b2 = Bundle()
+                b2.putString("data", "解压时间："+(endTime-startTime)+"ms")
+                msg2.data = b2
+                handler?.sendMessage(msg2)
+            }.start()
+        }
         home_bt_small1?.setOnClickListener(View.OnClickListener { v: View? ->
             Thread {
                 var i = 0
@@ -153,7 +199,7 @@ class MainActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
             home_tv_reply?.text = str + "\n" + home_tv_reply?.text
             false
         }
-
+        home_tv_reply.setMovementMethod(ScrollingMovementMethod.getInstance());
 //        nameTextView = findViewById<TextView>(R.id.nametextview)
 //        ipTextView = findViewById<TextView>(R.id.ipTextView)
 //        mConnectivityManager =
